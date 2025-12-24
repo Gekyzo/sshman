@@ -1,0 +1,13 @@
+#!/bin/bash
+# Wrapper script to run sshman
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+JAR_FILE="$SCRIPT_DIR/target/sshman-0.1.0-jar-with-dependencies.jar"
+
+if [ ! -f "$JAR_FILE" ]; then
+  echo "Error: JAR file not found. Please build the project first:"
+  echo "  mvn clean package"
+  exit 1
+fi
+
+java -jar "$JAR_FILE" "$@"

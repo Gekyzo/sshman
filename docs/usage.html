@@ -31,6 +31,8 @@
                     <li><a href="#generate">Generate Command</a></li>
                     <li><a href="#use">Use Command</a></li>
                     <li><a href="#init">Init Command</a></li>
+                    <li><a href="#connect-new">Connect-New Command</a></li>
+                    <li><a href="#connect">Connect Command</a></li>
                     <li><a href="#list">List Command</a></li>
                     <li><a href="#info">Info Command</a></li>
                     <li><a href="#algorithms">Algorithms</a></li>
@@ -46,11 +48,13 @@
 
             <section id="overview">
                 <h2>Overview</h2>
-                <p>sshman is a command-line tool for managing SSH keys. It provides five main commands:</p>
+                <p>sshman is a command-line tool for managing SSH keys and connections. It provides seven main commands:</p>
                 <ul>
                     <li><strong>generate</strong> - Create new SSH key pairs</li>
                     <li><strong>use</strong> - Start ssh-agent and add SSH keys (with auto-clear)</li>
                     <li><strong>init</strong> - Create .sshman file for auto-directory switching</li>
+                    <li><strong>connect-new</strong> - Create new SSH connection profiles interactively</li>
+                    <li><strong>connect</strong> - Connect to saved SSH profiles by alias</li>
                     <li><strong>list</strong> - Display all SSH keys</li>
                     <li><strong>info</strong> - Show detailed information about a specific key</li>
                 </ul>
@@ -271,6 +275,106 @@ sshman init work/gitlab/id_gitlab_ed25519</code></pre>
 
                 <div class="note">
                     <strong>Important:</strong> <code>.sshman</code> files should be added to your <code>.gitignore</code> as they contain user-specific SSH key preferences.
+                </div>
+            </section>
+
+            <section id="connect-new">
+                <h2>Connect-New Command</h2>
+                <p>Create a new SSH connection profile interactively. Profiles are saved for quick access via the connect command.</p>
+
+                <h3>Basic Syntax</h3>
+                <pre><code>sshman connect-new</code></pre>
+
+                <h3>Interactive Prompts</h3>
+                <p>The command will prompt you for the following information:</p>
+                <ul>
+                    <li><strong>Alias</strong> (required) - A unique name for this profile (e.g., "production-server", "dev-db")</li>
+                    <li><strong>Hostname</strong> (required) - Server hostname or IP address</li>
+                    <li><strong>Username</strong> (required) - SSH username for the connection</li>
+                    <li><strong>Port</strong> (optional) - SSH port number (default: 22)</li>
+                    <li><strong>SSH key path</strong> (optional) - Path to SSH private key (shows available keys from ~/.ssh)</li>
+                </ul>
+
+                <h3>Features</h3>
+                <ul>
+                    <li>Validates that SSH key exists before saving</li>
+                    <li>Shows available SSH keys from ~/.ssh directory</li>
+                    <li>Supports both absolute and relative paths for SSH keys</li>
+                    <li>Prevents duplicate aliases</li>
+                </ul>
+
+                <h3>Example Session</h3>
+                <div class="example">
+                    <pre><code><span class="prompt">$</span> sshman connect-new
+<span class="output">Create a new SSH connection profile
+
+Alias: production-server
+Hostname: prod.example.com
+Username: deploy
+Port (default: 22): 22
+Available SSH keys in /home/user/.ssh:
+  - id_ed25519
+  - work/id_work_ed25519
+  - personal/id_personal_ed25519
+
+SSH key path (optional): work/id_work_ed25519
+
+Profile created successfully!
+  Alias:    production-server
+  Hostname: prod.example.com
+  Username: deploy
+  Port:     22
+  SSH Key:  /home/user/.ssh/work/id_work_ed25519
+
+To connect, run:
+  sshman connect production-server</span></code></pre>
+                </div>
+
+                <div class="note">
+                    <strong>Storage:</strong> Profiles are stored in <code>~/.sshman/profiles.json</code>
+                </div>
+            </section>
+
+            <section id="connect">
+                <h2>Connect Command</h2>
+                <p>Connect to a saved SSH profile by its alias. Supports tab completion for profile names.</p>
+
+                <h3>Basic Syntax</h3>
+                <pre><code>sshman connect &lt;ALIAS&gt;</code></pre>
+
+                <h3>How It Works</h3>
+                <ul>
+                    <li>Looks up the profile by alias in <code>~/.sshman/profiles.json</code></li>
+                    <li>Constructs the SSH command with saved parameters</li>
+                    <li>Executes the SSH connection interactively</li>
+                    <li>Shows the actual SSH command before connecting</li>
+                </ul>
+
+                <h3>Examples</h3>
+                <div class="example">
+                    <h4>Connect to a saved profile</h4>
+                    <pre><code><span class="prompt">$</span> sshman connect production-server
+<span class="output">Connecting to production-server...
+Command: ssh -p 22 -i /home/user/.ssh/work/id_work_ed25519 deploy@prod.example.com
+
+# You're now connected to the remote server</span></code></pre>
+                </div>
+
+                <div class="example">
+                    <h4>Profile not found</h4>
+                    <pre><code><span class="prompt">$</span> sshman connect nonexistent
+<span class="output">Profile not found: nonexistent
+
+Available profiles:
+  - production-server (deploy@prod.example.com)
+  - dev-db (root@192.168.1.100)
+
+To create a new profile, run:
+  sshman connect-new</span></code></pre>
+                </div>
+
+                <div class="note">
+                    <strong>Tab Completion:</strong> Profile aliases support tab completion when shell completion is installed.
                 </div>
             </section>
 

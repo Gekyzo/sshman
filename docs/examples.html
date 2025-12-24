@@ -28,6 +28,7 @@
                 <h3>Examples</h3>
                 <ul>
                     <li><a href="#quick-start">Quick Start</a></li>
+                    <li><a href="#connection-profiles">Connection Profiles</a></li>
                     <li><a href="#github">GitHub Setup</a></li>
                     <li><a href="#work">Work Environment</a></li>
                     <li><a href="#multiple-accounts">Multiple Accounts</a></li>
@@ -90,6 +91,126 @@ Key: id_work_ecdsa
   Public Key: /home/user/.ssh/id_work_ecdsa.pub</span></code></pre>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <section id="connection-profiles">
+                <h2>SSH Connection Profiles</h2>
+
+                <div class="example-scenario">
+                    <h3>Create Your First Connection Profile</h3>
+                    <p>Save frequently used SSH connections for quick access:</p>
+                    <div class="terminal">
+                        <div class="terminal-body">
+                            <pre><code><span class="prompt">$</span> sshman connect-new
+<span class="output">Create a new SSH connection profile
+
+Alias: dev-server
+Hostname: dev.example.com
+Username: ubuntu
+Port (default: 22): 2222
+Available SSH keys in /home/user/.ssh:
+  - id_ed25519
+  - work/id_work_ed25519
+
+SSH key path (optional): work/id_work_ed25519
+
+Profile created successfully!
+  Alias:    dev-server
+  Hostname: dev.example.com
+  Username: ubuntu
+  Port:     2222
+  SSH Key:  /home/user/.ssh/work/id_work_ed25519
+
+To connect, run:
+  sshman connect dev-server</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example-scenario">
+                    <h3>Connect to Saved Profiles</h3>
+                    <p>Use saved profiles instead of remembering complex SSH commands:</p>
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Step 1: Create multiple profiles</h4>
+                            <pre><code>sshman connect-new  # Create profile: production-db
+sshman connect-new  # Create profile: staging-app
+sshman connect-new  # Create profile: dev-server</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 2: Connect with tab completion</h4>
+                            <pre><code><span class="prompt">$</span> sshman connect [TAB]
+<span class="output">dev-server  production-db  staging-app</span>
+
+<span class="prompt">$</span> sshman connect production-db
+<span class="output">Connecting to production-db...
+Command: ssh -p 22 -i /home/user/.ssh/work/id_work_ed25519 admin@db.prod.example.com
+
+# Connected to production database server</span></code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 3: View available profiles</h4>
+                            <pre><code><span class="prompt">$</span> sshman connect invalid-name
+<span class="output">Profile not found: invalid-name
+
+Available profiles:
+  - dev-server (ubuntu@dev.example.com)
+  - production-db (admin@db.prod.example.com)
+  - staging-app (deploy@staging.example.com)
+
+To create a new profile, run:
+  sshman connect-new</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example-scenario">
+                    <h3>Profile Management Best Practices</h3>
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Organize profiles by environment</h4>
+                            <pre><code># Production servers
+sshman connect-new  # Alias: prod-app
+sshman connect-new  # Alias: prod-db
+sshman connect-new  # Alias: prod-cache
+
+# Development servers
+sshman connect-new  # Alias: dev-app
+sshman connect-new  # Alias: dev-db</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Use descriptive aliases</h4>
+                            <pre><code># Good aliases (descriptive)
+production-app-server
+staging-database
+client-a-web-server
+
+# Avoid (too vague)
+server1
+db
+web</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Combine with SSH keys</h4>
+                            <pre><code># Generate environment-specific keys
+sshman generate --use production --algo ed25519
+sshman generate --use staging --algo ed25519
+
+# Use them in profiles
+sshman connect-new
+# Alias: prod-server
+# SSH key: production/id_production_ed25519
+
+sshman connect-new
+# Alias: staging-server
+# SSH key: staging/id_staging_ed25519</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="note">
+                    <strong>Location:</strong> All profiles are stored in <code>~/.sshman/profiles.json</code>. You can manually edit this file if needed, but using <code>connect-new</code> is recommended.
                 </div>
             </section>
 
@@ -294,6 +415,52 @@ git remote set-url origin git@github.com-work:company/work-repo.git</code></pre>
 
             <section id="server-deployment">
                 <h2>Server Deployment</h2>
+
+                <div class="example-scenario">
+                    <h3>Quick Server Access with Profiles</h3>
+                    <p>Set up connection profiles for all your deployment servers:</p>
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Step 1: Generate deployment key</h4>
+                            <pre><code>sshman generate --use deployment --algo ed25519 --comment "deployment-key"</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 2: Create profiles for each server</h4>
+                            <pre><code># Production server
+sshman connect-new
+# Alias: prod-web
+# Hostname: 10.0.1.10
+# Username: deploy
+# Port: 22
+# SSH key: deployment/id_deployment_ed25519
+
+# Staging server
+sshman connect-new
+# Alias: staging-web
+# Hostname: 10.0.2.10
+# Username: deploy
+# SSH key: deployment/id_deployment_ed25519
+
+# Database server
+sshman connect-new
+# Alias: prod-db
+# Hostname: 10.0.1.20
+# Username: dbadmin
+# SSH key: deployment/id_deployment_ed25519</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 3: Deploy with ease</h4>
+                            <pre><code># Connect to production
+sshman connect prod-web
+
+# Switch to staging
+sshman connect staging-web
+
+# Check database
+sshman connect prod-db</code></pre>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="example-scenario">
                     <h3>CI/CD Pipeline Key</h3>

@@ -7,12 +7,23 @@
 
 **sshman** simplifies SSH key management by providing a centralized, user-friendly command-line interface. Generate, list, and inspect SSH keys with ease, featuring security checks, detailed metadata, and beautiful output formatting.
 
+## 🔧 SSH Commands Wrapped
+
+This tool provides a convenient interface for the following SSH-related commands:
+
+- **`ssh-keygen`** - Generate and inspect SSH keys
+- **`ssh-agent`** - Start the SSH authentication agent
+- **`ssh-add`** - Manage private keys in the SSH agent
+- **`ssh`** - Connect to remote servers using saved profiles (via connect command)
+- **`eval`** - Source agent environment variables into the current shell
+
 ## ✨ Features
 
 - 🔑 **Generate SSH Keys** - Create ED25519, RSA, or ECDSA keys with sensible defaults
 - 📁 **Folder Organization** - Organize keys with nested folder structures (e.g., `work/project-a`)
 - 🚀 **Use SSH Keys** - Start ssh-agent and add keys with a single command
 - 🔄 **Auto-Directory Switching** - Automatically load SSH keys per project directory (like `.nvmrc`)
+- 🔌 **Connection Profiles** - Save and manage SSH connection profiles with custom settings
 - 📋 **List Keys** - View all SSH keys with detailed information (type, permissions, modification dates)
 - 🔍 **Inspect Keys** - Display comprehensive key information including fingerprints and security warnings
 - 🛡️ **Security Checks** - Detect insecure file permissions and weak key types
@@ -115,6 +126,12 @@ sshman info work/github/id_github_ed25519
 
 # List keys with detailed information
 sshman list --long
+
+# Create a connection profile interactively
+sshman connect-new
+
+# Connect to a saved profile
+sshman connect myserver
 ```
 
 ## 📖 Usage
@@ -270,6 +287,72 @@ When using `sshman use` with an existing ssh-agent, all currently loaded keys ar
 # List keys currently in ssh-agent
 ssh-add -l
 ```
+
+### Manage SSH Connections
+
+Create and manage SSH connection profiles for easy access to remote servers.
+
+```bash
+# Create a new connection profile interactively
+sshman connect-new
+
+# You'll be prompted for:
+# - Alias (e.g., "myserver", "prod-db")
+# - Hostname (e.g., "192.168.1.100", "server.example.com")
+# - Username (e.g., "ubuntu", "deploy")
+# - Port (default: 22)
+# - SSH key path (optional, with auto-suggestions from ~/.ssh)
+
+# Connect to a saved profile
+sshman connect myserver
+
+# List available profiles when alias not found
+sshman connect nonexistent
+# Shows all available profiles and suggests running connect-new
+```
+
+**Example Session:**
+
+```
+$ sshman connect-new
+Create a new SSH connection profile
+
+Alias: production-server
+Hostname: prod.example.com
+Username: deploy
+Port (default: 22): 22
+Available SSH keys in /home/user/.ssh:
+  - id_ed25519
+  - work/id_work_ed25519
+  - personal/id_personal_ed25519
+
+SSH key path (optional): work/id_work_ed25519
+
+Profile created successfully!
+  Alias:    production-server
+  Hostname: prod.example.com
+  Username: deploy
+  Port:     22
+  SSH Key:  /home/user/.ssh/work/id_work_ed25519
+
+To connect, run:
+  sshman connect production-server
+```
+
+**Connecting to a Profile:**
+
+```bash
+$ sshman connect production-server
+Connecting to production-server...
+Command: ssh -p 22 -i /home/user/.ssh/work/id_work_ed25519 deploy@prod.example.com
+
+# You're now connected to the server
+```
+
+**Profile Storage:**
+- Profiles are stored in `~/.sshman/profiles.json`
+- Tab completion is available for profile aliases
+- Profiles include: alias, hostname, username, port, and optional SSH key path
 
 ### Auto-Directory SSH Key Switching
 

@@ -18,6 +18,8 @@ import java.util.concurrent.Callable;
         InfoCommand.class,
         UseCommand.class,
         InitCommand.class,
+        ConnectNewCommand.class,
+        ConnectCommand.class,
         CommandLine.HelpCommand.class
     },
     footer = "%nExamples:%n" +
@@ -25,7 +27,9 @@ import java.util.concurrent.Callable;
         "  sshman list%n" +
         "  sshman info work-key%n" +
         "  eval \"$(sshman use id_ed25519 --quiet)\"%n" +
-        "  sshman init work/project-key"
+        "  sshman init work/project-key%n" +
+        "  sshman connect-new%n" +
+        "  sshman connect myserver"
 )
 public class SshMan implements Callable<Integer> {
 

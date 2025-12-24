@@ -2,7 +2,7 @@
 
 > A modern, intuitive CLI tool for managing SSH keys and connections
 
-[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
+[![Java](https://img.shields.io/badge/Java-21+-orange.svg)](https://www.oracle.com/java/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **sshman** simplifies SSH key management by providing a centralized, user-friendly command-line interface. Generate, list, and inspect SSH keys with ease, featuring security checks, detailed metadata, and beautiful output formatting.
@@ -11,6 +11,7 @@
 
 - 🔑 **Generate SSH Keys** - Create ED25519, RSA, or ECDSA keys with sensible defaults
 - 📁 **Folder Organization** - Organize keys with nested folder structures (e.g., `work/project-a`)
+- 🚀 **Use SSH Keys** - Start ssh-agent and add keys with a single command
 - 📋 **List Keys** - View all SSH keys with detailed information (type, permissions, modification dates)
 - 🔍 **Inspect Keys** - Display comprehensive key information including fingerprints and security warnings
 - 🛡️ **Security Checks** - Detect insecure file permissions and weak key types
@@ -21,7 +22,7 @@
 
 ### Prerequisites
 
-- **Java 17 or higher** - [Download Java](https://adoptium.net/)
+- **Java 21 or higher** - [Download Java](https://adoptium.net/)
 - **Maven 3.6+** - For building from source
 - **ssh-keygen** - Should be pre-installed on most Unix-like systems
 
@@ -65,6 +66,9 @@ export PATH="$PATH:/path/to/sshman"
 ```bash
 # Generate a new ED25519 key with folder organization (recommended)
 sshman generate --use work/github --comment "Work GitHub account"
+
+# Start ssh-agent and add the key (recommended workflow)
+eval "$(sshman use work/github/id_github_ed25519 --quiet)"
 
 # Generate a simple key with a custom name
 sshman generate --name my-key --algo ed25519
@@ -179,6 +183,57 @@ sshman generate --use personal/hobby-projects --algo ed25519
 - `rsa` - Traditional, widely supported (2048-16384 bits, default: 4096)
 - `ecdsa` - Elliptic curve (256, 384, or 521 bits, default: 256)
 
+### Use SSH Keys (Agent Management)
+
+Start ssh-agent and add SSH keys with auto-completion support.
+
+```bash
+# Start ssh-agent and add a key (recommended - use with eval)
+eval "$(sshman use CiroPersonal --quiet)"
+
+# Alternative alias (same functionality)
+eval "$(sshman set CiroPersonal --quiet)"
+
+# Show what would be executed (helpful output mode)
+sshman use CiroPersonal
+
+# Add key with lifetime (expires after 1 hour)
+eval "$(sshman use work/github/id_github_ed25519 --quiet --time 3600)"
+
+# Add key with 8 hour lifetime
+eval "$(sshman use personal/github/id_github_ed25519 --quiet --time 28800)"
+
+# Use key from custom SSH directory
+sshman use my-key --path /custom/path/.ssh --quiet
+
+# Tab completion works for key names (when shell completion is enabled)
+sshman use <TAB>  # Shows available SSH keys
+```
+
+**How it works:**
+- Detects if ssh-agent is already running via `SSH_AUTH_SOCK` and `SSH_AGENT_PID`
+- If agent is running, adds the key to the existing agent
+- If no agent is running, starts a new agent and adds the key
+- `--quiet` mode outputs only the command for use with `eval`
+- `--time` sets how long the key remains in the agent (in seconds)
+
+**Example Output (without --quiet):**
+
+```
+# Starting ssh-agent and adding key: /home/user/.ssh/CiroPersonal
+# Copy and paste the following command, or run:
+# eval "$(sshman use CiroPersonal --quiet)"
+
+eval "$(ssh-agent -s)" && ssh-add /home/user/.ssh/CiroPersonal
+```
+
+**Verify the key was added:**
+
+```bash
+# List keys currently in ssh-agent
+ssh-add -l
+```
+
 ### List SSH Keys
 
 View all SSH keys in your `~/.ssh` directory.
@@ -263,11 +318,17 @@ Fingerprints:
 # Generate a new key for GitHub with folder organization
 sshman generate --use personal/github --comment "GitHub - personal"
 
+# Start ssh-agent and add the key
+eval "$(sshman use personal/github/id_github_ed25519 --quiet)"
+
 # View the public key to copy to GitHub
 sshman info personal/github/id_github_ed25519 --public
 
 # Verify the key was created successfully
 sshman list
+
+# Test the connection
+ssh -T git@github.com
 ```
 
 ### Auditing Your SSH Keys
@@ -301,6 +362,25 @@ sshman list --long
 # work/gitlab/id_gitlab_ed25519
 # work/production/deploy/id_deploy_ed25519
 # personal/github/id_github_ed25519
+```
+
+### Quick Key Switching Between Projects
+
+```bash
+# Switch to work GitLab key
+eval "$(sshman use work/gitlab/id_gitlab_ed25519 --quiet)"
+
+# Switch to personal GitHub key
+eval "$(sshman set personal/github/id_github_ed25519 --quiet)"
+
+# Add production deploy key with 4-hour expiry
+eval "$(sshman use work/production/deploy/id_deploy_ed25519 --quiet --time 14400)"
+
+# Verify which keys are currently loaded
+ssh-add -l
+
+# Remove all keys from agent when done
+ssh-add -D
 ```
 
 ## 🏗️ Development
@@ -363,10 +443,10 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 See [seeds.md](seeds.md) for the full feature specification and planned enhancements:
 
+- [x] ssh-agent integration (use/set commands)
 - [ ] Profile management for SSH connections
 - [ ] SSH config file generation and sync
 - [ ] Key rotation and expiry tracking
-- [ ] ssh-agent integration
 - [ ] Backup and restore functionality
 - [ ] JSON output for automation
 - [ ] Shell completion (bash, zsh, fish)

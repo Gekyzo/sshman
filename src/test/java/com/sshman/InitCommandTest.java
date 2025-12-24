@@ -37,16 +37,24 @@ class InitCommandTest {
     }
 
     @Test
-    void testInitNonexistentKey() {
-        CommandLine cmd = new CommandLine(new SshMan());
-        StringWriter swErr = new StringWriter();
-        cmd.setErr(new PrintWriter(swErr));
+    void testInitNonexistentKey(@TempDir Path tempDir) {
+        String originalDir = System.getProperty("user.dir");
+        System.setProperty("user.dir", tempDir.toString());
 
-        int exitCode = cmd.execute("init", "nonexistent-key-98765");
+        try {
+            CommandLine cmd = new CommandLine(new SshMan());
+            StringWriter swErr = new StringWriter();
+            cmd.setErr(new PrintWriter(swErr));
 
-        assertEquals(1, exitCode);
-        String errorOutput = swErr.toString();
-        assertTrue(errorOutput.contains("Key not found"));
+            int exitCode = cmd.execute("init", "nonexistent-key-98765-xyz-abc");
+
+            assertEquals(1, exitCode);
+            String errorOutput = swErr.toString();
+            assertTrue(errorOutput.contains("Key not found"),
+                "Expected 'Key not found' in error output, but got: " + errorOutput);
+        } finally {
+            System.setProperty("user.dir", originalDir);
+        }
     }
 
     @Test

@@ -30,9 +30,12 @@ public class GenerateCommand implements Callable<Integer> {
         defaultValue = "ed25519")
     private KeyAlgorithm algorithm;
 
+    @Option(names = {"-u", "--use"},
+        description = "Use case/folder structure (e.g., 'work', 'personal', 'work/project-a')")
+    private String use;
+
     @Option(names = {"-n", "--name"},
-        description = "Key name/filename",
-        required = true)
+        description = "Key name/filename (if not specified, generated from --use and algorithm)")
     private String name;
 
     @Option(names = {"-c", "--comment"},
@@ -76,9 +79,20 @@ public class GenerateCommand implements Callable<Integer> {
         PrintWriter out = spec.commandLine().getOut();
         PrintWriter err = spec.commandLine().getErr();
 
+        // Determine key name if not specified
+        if (name == null || name.isBlank()) {
+            if (use == null || use.isBlank()) {
+                err.println("Either --name or --use must be specified");
+                return 1;
+            }
+            name = generateKeyName();
+        }
+
+        // Determine the target directory based on --use option
         Path sshDir = getSshDirectory();
-        Path keyPath = sshDir.resolve(name);
-        Path pubKeyPath = sshDir.resolve(name + ".pub");
+        Path targetDir = determineTargetDirectory(sshDir);
+        Path keyPath = targetDir.resolve(name);
+        Path pubKeyPath = targetDir.resolve(name + ".pub");
 
         // Validate
         if (!validateInputs(sshDir, keyPath)) {
@@ -95,8 +109,8 @@ public class GenerateCommand implements Callable<Integer> {
             out.println("Overwriting existing key...");
         }
 
-        // Ensure .ssh directory exists
-        if (!ensureSshDirectory(sshDir)) {
+        // Ensure target directory exists
+        if (!ensureDirectory(targetDir)) {
             return 1;
         }
 
@@ -106,6 +120,31 @@ public class GenerateCommand implements Callable<Integer> {
 
     private Path getSshDirectory() {
         return Path.of(System.getProperty("user.home"), ".ssh");
+    }
+
+    /**
+     * Determine the target directory based on the --use option.
+     * If --use contains slashes, create subdirectories (e.g., work/project-a).
+     */
+    private Path determineTargetDirectory(Path sshDir) {
+        if (use == null || use.isBlank()) {
+            return sshDir;
+        }
+        return sshDir.resolve(use);
+    }
+
+    /**
+     * Generate a key name based on the --use option and algorithm.
+     * For example: --use work/project-a --algo ed25519 -> id_ed25519
+     */
+    private String generateKeyName() {
+        // Extract the last part of the use path for the key name
+        String usePart = use;
+        if (use.contains("/")) {
+            String[] parts = use.split("/");
+            usePart = parts[parts.length - 1];
+        }
+        return String.format("id_%s_%s", usePart, algorithm.value);
     }
 
     private boolean validateInputs(Path sshDir, Path keyPath) {
@@ -120,6 +159,14 @@ public class GenerateCommand implements Callable<Integer> {
         if (name.contains("/") || name.contains("\\") || name.contains("..")) {
             err.println("Invalid key name: must not contain path separators");
             return false;
+        }
+
+        // Validate use path if specified
+        if (use != null && !use.isBlank()) {
+            if (use.contains("..") || use.startsWith("/") || use.startsWith("\\")) {
+                err.println("Invalid use path: must be relative and not contain '..'");
+                return false;
+            }
         }
 
         // Validate bits if specified
@@ -146,20 +193,20 @@ public class GenerateCommand implements Callable<Integer> {
         return true;
     }
 
-    private boolean ensureSshDirectory(Path sshDir) {
+    private boolean ensureDirectory(Path directory) {
         PrintWriter out = spec.commandLine().getOut();
         PrintWriter err = spec.commandLine().getErr();
 
-        if (!Files.exists(sshDir)) {
+        if (!Files.exists(directory)) {
             try {
-                Files.createDirectories(sshDir);
+                Files.createDirectories(directory);
                 // Set proper permissions (700)
-                sshDir.toFile().setReadable(true, true);
-                sshDir.toFile().setWritable(true, true);
-                sshDir.toFile().setExecutable(true, true);
-                out.println("Created " + sshDir);
+                directory.toFile().setReadable(true, true);
+                directory.toFile().setWritable(true, true);
+                directory.toFile().setExecutable(true, true);
+                out.println("Created directory: " + directory);
             } catch (IOException e) {
-                err.println("Failed to create SSH directory: " + e.getMessage());
+                err.println("Failed to create directory: " + e.getMessage());
                 return false;
             }
         }

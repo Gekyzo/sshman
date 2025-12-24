@@ -163,17 +163,54 @@ Enter same passphrase again:
                 </div>
 
                 <div class="example-scenario">
+                    <h3>Organize Keys by Project</h3>
+                    <p>Use folder structure to keep project-specific keys organized:</p>
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Step 1: Create keys for different projects</h4>
+                            <pre><code>sshman generate --use work/client-a --algo ed25519
+sshman generate --use work/client-b --algo ed25519
+sshman generate --use work/internal --algo ed25519</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 2: List all keys with folder structure</h4>
+                            <pre><code><span class="prompt">$</span> sshman list
+<span class="output">SSH Keys in /home/user/.ssh:
+
+  work/client-a/id_client-a_ed25519 (+ .pub)
+  work/client-b/id_client-b_ed25519 (+ .pub)
+  work/internal/id_internal_ed25519 (+ .pub)
+
+Total: 3 key(s)</span></code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 3: Configure SSH for each project</h4>
+                            <p>Add to <code>~/.ssh/config</code>:</p>
+                            <pre><code>Host client-a-server
+    HostName server1.client-a.com
+    User deploy
+    IdentityFile ~/.ssh/work/client-a/id_client-a_ed25519
+
+Host client-b-server
+    HostName server1.client-b.com
+    User deploy
+    IdentityFile ~/.ssh/work/client-b/id_client-b_ed25519</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example-scenario">
                     <h3>Deploy Key to Multiple Servers</h3>
                     <div class="step-by-step">
                         <div class="step">
                             <h4>Step 1: Generate the key</h4>
-                            <pre><code>sshman generate --algo ed25519 --use work-servers</code></pre>
+                            <pre><code>sshman generate --algo ed25519 --use work/servers</code></pre>
                         </div>
                         <div class="step">
                             <h4>Step 2: Copy to servers</h4>
-                            <pre><code>ssh-copy-id -i ~/.ssh/id_work-servers_ed25519 user@server1.example.com
-ssh-copy-id -i ~/.ssh/id_work-servers_ed25519 user@server2.example.com
-ssh-copy-id -i ~/.ssh/id_work-servers_ed25519 user@server3.example.com</code></pre>
+                            <pre><code>ssh-copy-id -i ~/.ssh/work/servers/id_servers_ed25519 user@server1.example.com
+ssh-copy-id -i ~/.ssh/work/servers/id_servers_ed25519 user@server2.example.com
+ssh-copy-id -i ~/.ssh/work/servers/id_servers_ed25519 user@server3.example.com</code></pre>
                         </div>
                         <div class="step">
                             <h4>Step 3: Configure SSH for easy access</h4>
@@ -181,17 +218,17 @@ ssh-copy-id -i ~/.ssh/id_work-servers_ed25519 user@server3.example.com</code></p
                             <pre><code>Host server1
     HostName server1.example.com
     User deploy
-    IdentityFile ~/.ssh/id_work-servers_ed25519
+    IdentityFile ~/.ssh/work/servers/id_servers_ed25519
 
 Host server2
     HostName server2.example.com
     User deploy
-    IdentityFile ~/.ssh/id_work-servers_ed25519
+    IdentityFile ~/.ssh/work/servers/id_servers_ed25519
 
 Host server3
     HostName server3.example.com
     User deploy
-    IdentityFile ~/.ssh/id_work-servers_ed25519</code></pre>
+    IdentityFile ~/.ssh/work/servers/id_servers_ed25519</code></pre>
                         </div>
                         <div class="step">
                             <h4>Step 4: Connect easily</h4>

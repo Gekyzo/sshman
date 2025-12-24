@@ -10,6 +10,7 @@
 ## ✨ Features
 
 - 🔑 **Generate SSH Keys** - Create ED25519, RSA, or ECDSA keys with sensible defaults
+- 📁 **Folder Organization** - Organize keys with nested folder structures (e.g., `work/project-a`)
 - 📋 **List Keys** - View all SSH keys with detailed information (type, permissions, modification dates)
 - 🔍 **Inspect Keys** - Display comprehensive key information including fingerprints and security warnings
 - 🛡️ **Security Checks** - Detect insecure file permissions and weak key types
@@ -62,14 +63,17 @@ export PATH="$PATH:/path/to/sshman"
 ## 🚀 Quick Start
 
 ```bash
-# Generate a new ED25519 key (recommended)
-sshman generate --name work-github --comment "Work GitHub account"
+# Generate a new ED25519 key with folder organization (recommended)
+sshman generate --use work/github --comment "Work GitHub account"
 
-# List all your SSH keys
+# Generate a simple key with a custom name
+sshman generate --name my-key --algo ed25519
+
+# List all your SSH keys (scans all subdirectories)
 sshman list
 
 # Show detailed information about a key
-sshman info work-github
+sshman info work/github/id_github_ed25519
 
 # List keys with detailed information
 sshman list --long
@@ -95,7 +99,16 @@ sshman --version
 Generate new SSH keys with various algorithms and options.
 
 ```bash
-# Generate with default algorithm (ED25519 - most secure and recommended)
+# Generate with folder organization (RECOMMENDED)
+sshman generate --use work/github --algo ed25519
+
+# Generate with nested folders for better organization
+sshman generate --use work/client-a/production --algo ed25519
+
+# Generate with custom name in a folder
+sshman generate --use personal --name github_key --algo ed25519
+
+# Generate with default algorithm (ED25519 - most secure)
 sshman generate --name my-key
 
 # Generate RSA key with custom bits
@@ -105,16 +118,60 @@ sshman generate --name rsa-key --algo rsa --bits 4096
 sshman generate --name ecdsa-key --algo ecdsa --bits 384
 
 # Generate with custom comment
-sshman generate --name github-key --comment "GitHub account (user@example.com)"
+sshman generate --use github --comment "GitHub account (user@example.com)"
 
 # Generate with passphrase (interactive prompt)
-sshman generate --name secure-key --passphrase
+sshman generate --use work --passphrase
 
 # Generate without passphrase (explicitly)
-sshman generate --name ci-key --no-passphrase
+sshman generate --use ci/deploy --no-passphrase
 
 # Overwrite existing key
-sshman generate --name existing-key --force
+sshman generate --use work --force
+```
+
+#### Folder Structure Organization
+
+The `--use` option creates an organized folder structure in `~/.ssh`:
+
+```bash
+# Single level organization
+sshman generate --use personal --algo ed25519
+sshman generate --use work --algo ed25519
+sshman generate --use github --algo ed25519
+
+# Creates:
+# ~/.ssh/
+# ├── personal/
+# │   ├── id_personal_ed25519
+# │   └── id_personal_ed25519.pub
+# ├── work/
+# │   ├── id_work_ed25519
+# │   └── id_work_ed25519.pub
+# └── github/
+#     ├── id_github_ed25519
+#     └── id_github_ed25519.pub
+```
+
+```bash
+# Nested folder structure for complex projects
+sshman generate --use work/client-a --algo ed25519
+sshman generate --use work/client-b --algo ed25519
+sshman generate --use personal/hobby-projects --algo ed25519
+
+# Creates:
+# ~/.ssh/
+# ├── personal/
+# │   └── hobby-projects/
+# │       ├── id_hobby-projects_ed25519
+# │       └── id_hobby-projects_ed25519.pub
+# └── work/
+#     ├── client-a/
+#     │   ├── id_client-a_ed25519
+#     │   └── id_client-a_ed25519.pub
+#     └── client-b/
+#         ├── id_client-b_ed25519
+#         └── id_client-b_ed25519.pub
 ```
 
 **Supported Algorithms:**
@@ -203,11 +260,11 @@ Fingerprints:
 ### Setting Up a New GitHub Key
 
 ```bash
-# Generate a new key for GitHub
-sshman generate --name github --comment "GitHub - personal"
+# Generate a new key for GitHub with folder organization
+sshman generate --use personal/github --comment "GitHub - personal"
 
 # View the public key to copy to GitHub
-sshman info github --public
+sshman info personal/github/id_github_ed25519 --public
 
 # Verify the key was created successfully
 sshman list
@@ -229,16 +286,21 @@ sshman info id_ed25519
 # - Old or deprecated key types (DSA)
 ```
 
-### Managing Multiple Keys
+### Managing Multiple Keys with Folder Structure
 
 ```bash
-# Generate different keys for different purposes
-sshman generate --name work-gitlab --comment "Work GitLab"
-sshman generate --name personal-github --comment "Personal GitHub"
-sshman generate --name server-deploy --comment "Production server"
+# Generate different keys for different purposes using folder organization
+sshman generate --use work/gitlab --comment "Work GitLab"
+sshman generate --use personal/github --comment "Personal GitHub"
+sshman generate --use work/production/deploy --comment "Production server"
 
-# List and organize
+# List all keys (automatically scans subdirectories)
 sshman list --long
+
+# The output shows the organized structure:
+# work/gitlab/id_gitlab_ed25519
+# work/production/deploy/id_deploy_ed25519
+# personal/github/id_github_ed25519
 ```
 
 ## 🏗️ Development

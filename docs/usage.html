@@ -32,6 +32,7 @@
                     <li><a href="#list">List Command</a></li>
                     <li><a href="#info">Info Command</a></li>
                     <li><a href="#algorithms">Algorithms</a></li>
+                    <li><a href="#folder-structure">Folder Structure</a></li>
                     <li><a href="#best-practices">Best Practices</a></li>
                     <li><a href="#troubleshooting">Troubleshooting</a></li>
                 </ul>
@@ -83,7 +84,7 @@
                         </tr>
                         <tr>
                             <td><code>-u, --use &lt;TAG&gt;</code></td>
-                            <td>Use case tag (work, personal, github, etc.)</td>
+                            <td>Use case/folder structure (e.g., 'work', 'personal', 'work/project-a')</td>
                             <td>None</td>
                         </tr>
                         <tr>
@@ -118,7 +119,13 @@
                 <div class="example">
                     <h4>Generate Ed25519 key for work</h4>
                     <pre><code>sshman generate --algo ed25519 --use work</code></pre>
-                    <p>Creates: <code>id_work_ed25519</code> and <code>id_work_ed25519.pub</code></p>
+                    <p>Creates: <code>~/.ssh/work/id_work_ed25519</code> and <code>~/.ssh/work/id_work_ed25519.pub</code></p>
+                </div>
+
+                <div class="example">
+                    <h4>Generate key in nested folder structure</h4>
+                    <pre><code>sshman generate --algo ed25519 --use work/project-a</code></pre>
+                    <p>Creates: <code>~/.ssh/work/project-a/id_project-a_ed25519</code> and corresponding .pub file</p>
                 </div>
 
                 <div class="example">
@@ -292,8 +299,59 @@
                 </div>
             </section>
 
+            <section id="folder-structure">
+                <h2>Folder Structure Organization</h2>
+                <p>The <code>--use</code> option supports creating organized folder structures within your <code>~/.ssh</code> directory.</p>
+
+                <h3>Single Level Organization</h3>
+                <pre><code>sshman generate --use personal --algo ed25519
+sshman generate --use work --algo rsa --bits 4096
+sshman generate --use github --algo ed25519</code></pre>
+                <p>Creates:</p>
+                <pre><code>~/.ssh/
+├── personal/
+│   ├── id_personal_ed25519
+│   └── id_personal_ed25519.pub
+├── work/
+│   ├── id_work_rsa
+│   └── id_work_rsa.pub
+└── github/
+    ├── id_github_ed25519
+    └── id_github_ed25519.pub</code></pre>
+
+                <h3>Nested Folder Structure</h3>
+                <pre><code>sshman generate --use work/project-a --algo ed25519
+sshman generate --use work/project-b --algo ed25519
+sshman generate --use personal/github --algo ed25519</code></pre>
+                <p>Creates:</p>
+                <pre><code>~/.ssh/
+├── personal/
+│   └── github/
+│       ├── id_github_ed25519
+│       └── id_github_ed25519.pub
+└── work/
+    ├── project-a/
+    │   ├── id_project-a_ed25519
+    │   └── id_project-a_ed25519.pub
+    └── project-b/
+        ├── id_project-b_ed25519
+        └── id_project-b_ed25519.pub</code></pre>
+
+                <div class="note">
+                    <strong>Note:</strong> The <code>list</code> command automatically scans all subdirectories and displays keys with their relative paths. The <code>info</code> command can find keys by their full path or just the filename.
+                </div>
+            </section>
+
             <section id="best-practices">
                 <h2>Best Practices</h2>
+
+                <div class="best-practice">
+                    <h3>📁 Organize with Folder Structure</h3>
+                    <p>Use the folder structure feature to keep your keys organized by purpose, project, or environment.</p>
+                    <pre><code>sshman generate --use work/prod --algo ed25519
+sshman generate --use work/dev --algo ed25519
+sshman generate --use personal/hobby-projects --algo ed25519</code></pre>
+                </div>
 
                 <div class="best-practice">
                     <h3>🔐 Use Strong Passphrases</h3>

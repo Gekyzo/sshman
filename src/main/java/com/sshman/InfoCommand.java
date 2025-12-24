@@ -45,24 +45,34 @@ public class InfoCommand implements Callable<Integer> {
         PrintWriter err = spec.commandLine().getErr();
 
         Path sshDir = getSshDirectory();
+        
+        // Try to resolve the key (supports paths like "work/project-a/id_ed25519")
         Path keyPath = sshDir.resolve(keyName);
-        Path pubKeyPath = sshDir.resolve(keyName + ".pub");
+        Path pubKeyPath = Path.of(keyPath.toString() + ".pub");
 
         // Check if key exists
         if (!Files.exists(keyPath)) {
             // Maybe user specified the .pub file
-            if (keyName.endsWith(".pub") && Files.exists(sshDir.resolve(keyName))) {
-                keyPath = sshDir.resolve(keyName.replace(".pub", ""));
+            if (keyName.endsWith(".pub")) {
+                String baseName = keyName.substring(0, keyName.length() - 4);
+                keyPath = sshDir.resolve(baseName);
                 pubKeyPath = sshDir.resolve(keyName);
                 if (!Files.exists(keyPath)) {
                     keyPath = null; // Only public key exists
                 }
             } else {
-                err.println("Key not found: " + keyPath);
-                err.println();
-                err.println("Available keys:");
-                listAvailableKeys(sshDir);
-                return 1;
+                // Try to find the key recursively
+                Path foundKey = findKeyRecursive(sshDir, keyName);
+                if (foundKey != null) {
+                    keyPath = foundKey;
+                    pubKeyPath = Path.of(foundKey.toString() + ".pub");
+                } else {
+                    err.println("Key not found: " + keyName);
+                    err.println();
+                    err.println("Available keys:");
+                    listAvailableKeys(sshDir);
+                    return 1;
+                }
             }
         }
 
@@ -75,6 +85,22 @@ public class InfoCommand implements Callable<Integer> {
             return Path.of(customPath);
         }
         return Path.of(System.getProperty("user.home"), ".ssh");
+    }
+
+    /**
+     * Recursively search for a key by filename in the SSH directory.
+     */
+    private Path findKeyRecursive(Path baseDir, String keyName) {
+        try (var stream = Files.walk(baseDir)) {
+            return stream
+                .filter(Files::isRegularFile)
+                .filter(p -> p.getFileName().toString().equals(keyName))
+                .filter(this::isPrivateKey)
+                .findFirst()
+                .orElse(null);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     private void printKeyInfo(Path keyPath, Path pubKeyPath) {
@@ -366,7 +392,7 @@ public class InfoCommand implements Callable<Integer> {
         PrintWriter out = spec.commandLine().getOut();
         PrintWriter err = spec.commandLine().getErr();
 
-        try (var files = Files.list(sshDir)) {
+        try (var files = Files.walk(sshDir)) {
             files.filter(Files::isRegularFile)
                 .filter(p -> !p.getFileName().toString().endsWith(".pub"))
                 .filter(p -> !p.getFileName().toString().equals("config"))
@@ -374,7 +400,10 @@ public class InfoCommand implements Callable<Integer> {
                 .filter(p -> !p.getFileName().toString().equals("authorized_keys"))
                 .filter(this::isPrivateKey)
                 .sorted()
-                .forEach(p -> out.println("  - " + p.getFileName()));
+                .forEach(p -> {
+                    Path relativePath = sshDir.relativize(p);
+                    out.println("  - " + relativePath);
+                });
         } catch (IOException e) {
             err.println("  (error listing keys)");
         }

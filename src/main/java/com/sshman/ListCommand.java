@@ -83,22 +83,30 @@ public class ListCommand implements Callable<Integer> {
         PrintWriter err = spec.commandLine().getErr();
         List<KeyInfo> keys = new ArrayList<>();
 
-        try (Stream<Path> files = Files.list(sshDir)) {
-            files.filter(Files::isRegularFile)
-                .filter(this::isKeyFile)
-                .sorted()
-                .forEach(path -> {
-                    try {
-                        keys.add(new KeyInfo(path));
-                    } catch (IOException e) {
-                        // Skip files we can't read
-                    }
-                });
+        try {
+            findKeysRecursive(sshDir, sshDir, keys);
         } catch (IOException e) {
             err.println("Error reading SSH directory: " + e.getMessage());
         }
 
         return keys;
+    }
+
+    private void findKeysRecursive(Path baseDir, Path currentDir, List<KeyInfo> keys) throws IOException {
+        try (Stream<Path> entries = Files.list(currentDir)) {
+            entries.sorted().forEach(path -> {
+                try {
+                    if (Files.isDirectory(path)) {
+                        // Recursively scan subdirectories
+                        findKeysRecursive(baseDir, path, keys);
+                    } else if (Files.isRegularFile(path) && isKeyFile(path)) {
+                        keys.add(new KeyInfo(baseDir, path));
+                    }
+                } catch (IOException e) {
+                    // Skip files/directories we can't read
+                }
+            });
+        }
     }
 
     private boolean isKeyFile(Path path) {
@@ -168,7 +176,7 @@ public class ListCommand implements Callable<Integer> {
 
         for (KeyInfo key : keys) {
             String pubIndicator = key.hasPublicKey ? " (+ .pub)" : "";
-            out.printf("  %s%s%n", key.name, pubIndicator);
+            out.printf("  %s%s%n", key.relativePath, pubIndicator);
         }
 
         out.println();
@@ -181,13 +189,13 @@ public class ListCommand implements Callable<Integer> {
         out.println("SSH Keys in " + getSshDirectory() + ":");
         out.println();
 
-        out.printf("  %-20s %-10s %-10s %-16s %s%n",
-            "NAME", "TYPE", "PERMS", "MODIFIED", "PUBLIC");
-        out.println("  " + "-".repeat(70));
+        out.printf("  %-35s %-10s %-10s %-16s %s%n",
+            "PATH", "TYPE", "PERMS", "MODIFIED", "PUBLIC");
+        out.println("  " + "-".repeat(85));
 
         for (KeyInfo key : keys) {
-            out.printf("  %-20s %-10s %-10s %-16s %s%n",
-                truncate(key.name, 20),
+            out.printf("  %-35s %-10s %-10s %-16s %s%n",
+                truncate(key.relativePath, 35),
                 key.type,
                 key.permissions,
                 key.modified,
@@ -208,12 +216,16 @@ public class ListCommand implements Callable<Integer> {
 
     private class KeyInfo {
         final String name;
+        final String relativePath;
         final String type;
         final String permissions;
         final String modified;
         final boolean hasPublicKey;
 
-        KeyInfo(Path path) throws IOException {
+        KeyInfo(Path baseDir, Path path) throws IOException {
+            // Calculate relative path from base SSH directory
+            Path relative = baseDir.relativize(path);
+            this.relativePath = relative.toString();
             this.name = path.getFileName().toString();
             this.type = detectKeyType(path);
             this.permissions = getPermissions(path);

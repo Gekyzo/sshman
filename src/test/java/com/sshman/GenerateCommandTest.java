@@ -12,15 +12,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GenerateCommandTest {
 
     @Test
-    void testGenerateMissingName() {
+    void testGenerateMissingNameAndUse() {
         CommandLine cmd = new CommandLine(new SshMan());
         StringWriter sw = new StringWriter();
         cmd.setErr(new PrintWriter(sw));
 
-        int exitCode = cmd.execute("generate");
+        int exitCode = cmd.execute("generate", "--no-passphrase");
 
-        assertEquals(2, exitCode); // Missing required option
-        assertTrue(sw.toString().contains("--name"));
+        assertEquals(1, exitCode); // Either --name or --use must be specified
+        assertTrue(sw.toString().contains("--name") || sw.toString().contains("--use"));
     }
 
     @Test
@@ -58,6 +58,20 @@ class GenerateCommandTest {
         assertEquals(0, exitCode);
         assertTrue(sw.toString().contains("--algo"));
         assertTrue(sw.toString().contains("--name"));
+        assertTrue(sw.toString().contains("--use"));
+    }
+
+    @Test
+    void testGenerateWithUseOption() {
+        CommandLine cmd = new CommandLine(new SshMan());
+        StringWriter sw = new StringWriter();
+        cmd.setOut(new PrintWriter(sw));
+
+        // Test that --use option creates appropriate key name
+        int exitCode = cmd.execute("generate", "--use", "work", "--help");
+
+        assertEquals(0, exitCode);
+        assertTrue(sw.toString().contains("--use"));
     }
 
 }

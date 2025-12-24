@@ -1,0 +1,101 @@
+#compdef sshman
+
+# Zsh completion for sshman
+# Generated for sshman 0.1.0
+
+_sshman() {
+    local -a commands
+    commands=(
+        'generate:Generate a new SSH key pair'
+        'list:List all SSH keys in ~/.ssh'
+        'info:Show detailed information about a specific SSH key'
+        'use:Start ssh-agent and add the specified SSH key'
+        'help:Display help information about the specified command'
+    )
+
+    local curcontext="$curcontext" state line
+    typeset -A opt_args
+
+    _arguments -C \
+        '(-h --help)'{-h,--help}'[Show help information]' \
+        '(-V --version)'{-V,--version}'[Print version information]' \
+        '1: :->command' \
+        '*::arg:->args'
+
+    case $state in
+        command)
+            _describe -t commands 'sshman commands' commands
+            ;;
+        args)
+            case $line[1] in
+                generate)
+                    _sshman_generate
+                    ;;
+                list)
+                    _sshman_list
+                    ;;
+                info)
+                    _sshman_info
+                    ;;
+                use|set)
+                    _sshman_use
+                    ;;
+                help)
+                    _describe -t commands 'sshman commands' commands
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_sshman_generate() {
+    _arguments \
+        '(-h --help)'{-h,--help}'[Show help information]' \
+        '--algo[Key algorithm (rsa, ed25519, ecdsa)]:algorithm:(rsa ed25519 ecdsa)' \
+        '--bits[Key size in bits (for RSA and ECDSA)]:bits:' \
+        '--use[Organization/use label]:label:' \
+        '--comment[Key comment]:comment:' \
+        '--no-passphrase[Generate key without passphrase]'
+}
+
+_sshman_list() {
+    _arguments \
+        '(-h --help)'{-h,--help}'[Show help information]' \
+        '(-l --long)'{-l,--long}'[Show detailed information]' \
+        '(-a --all)'{-a,--all}'[Include all key files]' \
+        '--path[Custom SSH directory path]:path:_directories'
+}
+
+_sshman_info() {
+    local -a keys
+    local ssh_dir="${HOME}/.ssh"
+    
+    # Get list of private keys
+    if [[ -d "$ssh_dir" ]]; then
+        keys=(${(f)"$(find "$ssh_dir" -type f ! -name "*.pub" ! -name "config" ! -name "known_hosts" ! -name "authorized_keys" -exec sh -c 'head -c 10 "$1" 2>/dev/null | grep -q "^-----BEGIN" && basename "$1"' _ {} \; 2>/dev/null)"})
+    fi
+    
+    _arguments \
+        '(-h --help)'{-h,--help}'[Show help information]' \
+        '--path[Custom SSH directory path]:path:_directories' \
+        '1:key name:($keys)'
+}
+
+_sshman_use() {
+    local -a keys
+    local ssh_dir="${HOME}/.ssh"
+    
+    # Get list of private keys for completion
+    if [[ -d "$ssh_dir" ]]; then
+        keys=(${(f)"$(find "$ssh_dir" -type f ! -name "*.pub" ! -name "config" ! -name "known_hosts" ! -name "authorized_keys" -exec sh -c 'head -c 10 "$1" 2>/dev/null | grep -q "^-----BEGIN" && basename "$1"' _ {} \; 2>/dev/null)"})
+    fi
+    
+    _arguments \
+        '(-h --help)'{-h,--help}'[Show help information]' \
+        '--path[Custom SSH directory path]:path:_directories' \
+        '(-t --time)'{-t,--time}'[Lifetime of identities in seconds]:seconds:' \
+        '(-q --quiet)'{-q,--quiet}'[Quiet mode - only output eval command]' \
+        '1:key name:($keys)'
+}
+
+_sshman "$@"

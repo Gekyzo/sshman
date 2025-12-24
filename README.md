@@ -61,6 +61,28 @@ Alternatively, add the project directory to your `PATH`:
 export PATH="$PATH:/path/to/sshman"
 ```
 
+### Shell Tab Completion (Recommended)
+
+Enable tab completion for commands and SSH key names:
+
+```bash
+# Install completion for your shell
+cd completions
+./install.sh
+
+# Restart your shell or reload configuration
+source ~/.bashrc  # for bash
+source ~/.zshrc   # for zsh
+```
+
+Now you can use tab completion:
+```bash
+./sshman use [TAB]  # Lists available SSH keys
+./sshman [TAB]      # Lists available commands
+```
+
+See [completions/README.md](completions/README.md) for detailed installation instructions.
+
 ## 🚀 Quick Start
 
 ```bash
@@ -449,7 +471,8 @@ See [seeds.md](seeds.md) for the full feature specification and planned enhancem
 - [ ] Key rotation and expiry tracking
 - [ ] Backup and restore functionality
 - [ ] JSON output for automation
-- [ ] Shell completion (bash, zsh, fish)
+- [x] Shell completion (bash, zsh) ✅
+- [ ] Shell completion (fish)
 
 ## 🐛 Troubleshooting
 

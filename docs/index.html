@@ -53,6 +53,21 @@
                     <p>View comprehensive details about specific keys including fingerprints and metadata</p>
                 </div>
                 <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>SSH Agent Management</h3>
+                    <p>Start ssh-agent and add keys with a single command. Auto-clears existing keys to prevent conflicts</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Auto-Directory Switching</h3>
+                    <p>Automatically load SSH keys per project directory, like .nvmrc for Node versions</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⌨️</div>
+                    <h3>Tab Completion</h3>
+                    <p>Bash and zsh completion support with Homebrew integration for macOS</p>
+                </div>
+                <div class="feature-card">
                     <div class="feature-icon">🛡️</div>
                     <h3>Secure</h3>
                     <p>Support for passphrase protection and proper file permissions</p>
@@ -78,7 +93,7 @@
             <div class="install-step">
                 <h3>Prerequisites</h3>
                 <ul>
-                    <li>Java 17 or higher</li>
+                    <li>Java 21 or higher</li>
                     <li>Maven 3.6 or higher</li>
                     <li>ssh-keygen (usually pre-installed on Linux/macOS)</li>
                 </ul>
@@ -162,6 +177,16 @@ Fingerprints:
                     <h3><code>generate</code></h3>
                     <p>Create new SSH key pairs with various algorithms and configurations</p>
                     <a href="usage.html#generate" class="btn-link">Learn more →</a>
+                </div>
+                <div class="command-card">
+                    <h3><code>use</code></h3>
+                    <p>Start ssh-agent and add keys. Auto-clears existing keys to prevent conflicts</p>
+                    <a href="usage.html#use" class="btn-link">Learn more →</a>
+                </div>
+                <div class="command-card">
+                    <h3><code>init</code></h3>
+                    <p>Create .sshman file for auto-loading SSH keys per directory</p>
+                    <a href="usage.html#init" class="btn-link">Learn more →</a>
                 </div>
                 <div class="command-card">
                     <h3><code>list</code></h3>

@@ -29,6 +29,8 @@
                 <ul>
                     <li><a href="#overview">Overview</a></li>
                     <li><a href="#generate">Generate Command</a></li>
+                    <li><a href="#use">Use Command</a></li>
+                    <li><a href="#init">Init Command</a></li>
                     <li><a href="#list">List Command</a></li>
                     <li><a href="#info">Info Command</a></li>
                     <li><a href="#algorithms">Algorithms</a></li>
@@ -44,9 +46,11 @@
 
             <section id="overview">
                 <h2>Overview</h2>
-                <p>sshman is a command-line tool for managing SSH keys. It provides three main commands:</p>
+                <p>sshman is a command-line tool for managing SSH keys. It provides five main commands:</p>
                 <ul>
                     <li><strong>generate</strong> - Create new SSH key pairs</li>
+                    <li><strong>use</strong> - Start ssh-agent and add SSH keys (with auto-clear)</li>
+                    <li><strong>init</strong> - Create .sshman file for auto-directory switching</li>
                     <li><strong>list</strong> - Display all SSH keys</li>
                     <li><strong>info</strong> - Show detailed information about a specific key</li>
                 </ul>
@@ -144,6 +148,129 @@
                     <h4>Generate with fully custom name</h4>
                     <pre><code>sshman generate --name my_special_key --algo ecdsa --bits 521</code></pre>
                     <p>Creates: <code>my_special_key</code> and <code>my_special_key.pub</code></p>
+                </div>
+            </section>
+
+            <section id="use">
+                <h2>Use Command</h2>
+                <p>Start ssh-agent and add SSH keys with a single command. Automatically clears existing keys to prevent authentication conflicts.</p>
+
+                <h3>Basic Syntax</h3>
+                <pre><code>eval "$(sshman use &lt;KEY_NAME&gt; --quiet)"</code></pre>
+
+                <h3>Options</h3>
+                <table class="options-table">
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Description</th>
+                            <th>Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>-q, --quiet</code></td>
+                            <td>Output only the command for use with eval</td>
+                            <td>false</td>
+                        </tr>
+                        <tr>
+                            <td><code>-t, --time &lt;SECONDS&gt;</code></td>
+                            <td>Lifetime for the key in ssh-agent (in seconds)</td>
+                            <td>Unlimited</td>
+                        </tr>
+                        <tr>
+                            <td><code>--path &lt;DIR&gt;</code></td>
+                            <td>Custom SSH directory path</td>
+                            <td>~/.ssh</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>How It Works</h3>
+                <ul>
+                    <li>Detects if ssh-agent is already running</li>
+                    <li><strong>Clears all existing keys</strong> before adding the new one (prevents conflicts)</li>
+                    <li>If no agent is running, starts a new ssh-agent</li>
+                    <li>Adds the specified key to the agent</li>
+                </ul>
+
+                <h3>Examples</h3>
+                <div class="example">
+                    <h4>Basic usage</h4>
+                    <pre><code>eval "$(sshman use work/github/id_github_ed25519 --quiet)"</code></pre>
+                    <p>Loads the work GitHub key, clearing any existing keys first</p>
+                </div>
+
+                <div class="example">
+                    <h4>With time limit (1 hour)</h4>
+                    <pre><code>eval "$(sshman use personal/id_personal_ed25519 --quiet --time 3600)"</code></pre>
+                    <p>Key expires from agent after 1 hour</p>
+                </div>
+
+                <div class="example">
+                    <h4>View the command without executing</h4>
+                    <pre><code>sshman use work/key</code></pre>
+                    <p>Shows what would be executed without --quiet flag</p>
+                </div>
+
+                <div class="note">
+                    <strong>Note:</strong> When using an existing ssh-agent, all currently loaded keys are automatically cleared before adding the new key. This ensures only the intended key is active and prevents authentication conflicts when working across different projects.
+                </div>
+            </section>
+
+            <section id="init">
+                <h2>Init Command</h2>
+                <p>Create a .sshman file in the current directory for automatic SSH key loading when you enter the directory.</p>
+
+                <h3>Basic Syntax</h3>
+                <pre><code>sshman init &lt;KEY_NAME&gt; [OPTIONS]</code></pre>
+
+                <h3>Options</h3>
+                <table class="options-table">
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>-f, --force</code></td>
+                            <td>Overwrite existing .sshman file</td>
+                        </tr>
+                        <tr>
+                            <td><code>--path &lt;DIR&gt;</code></td>
+                            <td>Custom SSH directory path (default: ~/.ssh)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>How It Works</h3>
+                <p>The init command creates a <code>.sshman</code> file in your project directory. When you have shell hooks installed, the key is automatically loaded when you <code>cd</code> into that directory.</p>
+
+                <h3>Setup Shell Hooks</h3>
+                <pre><code>cd completions
+./install.sh
+
+# Reload your shell
+source ~/.bashrc  # or ~/.zshrc</code></pre>
+
+                <h3>Examples</h3>
+                <div class="example">
+                    <h4>Initialize for a project</h4>
+                    <pre><code>cd ~/projects/work-project
+sshman init work/gitlab/id_gitlab_ed25519</code></pre>
+                    <p>Creates .sshman file. Key auto-loads when entering this directory</p>
+                </div>
+
+                <div class="example">
+                    <h4>Update existing .sshman file</h4>
+                    <pre><code>sshman init work/new-key --force</code></pre>
+                    <p>Overwrites existing .sshman file with new key</p>
+                </div>
+
+                <div class="note">
+                    <strong>Important:</strong> <code>.sshman</code> files should be added to your <code>.gitignore</code> as they contain user-specific SSH key preferences.
                 </div>
             </section>
 

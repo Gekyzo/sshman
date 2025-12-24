@@ -17,13 +17,15 @@ import java.util.concurrent.Callable;
         ListCommand.class,
         InfoCommand.class,
         UseCommand.class,
+        InitCommand.class,
         CommandLine.HelpCommand.class
     },
     footer = "%nExamples:%n" +
         "  sshman generate --algo ed25519 --use work%n" +
         "  sshman list%n" +
         "  sshman info work-key%n" +
-        "  eval \"$(sshman use id_ed25519 --quiet)\""
+        "  eval \"$(sshman use id_ed25519 --quiet)\"%n" +
+        "  sshman init work/project-key"
 )
 public class SshMan implements Callable<Integer> {
 

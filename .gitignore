@@ -32,3 +32,6 @@ Thumbs.db
 
 # AI
 .claude/
+
+# sshman local config
+.sshman

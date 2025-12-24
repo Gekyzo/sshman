@@ -144,15 +144,15 @@ public class UseCommand implements Callable<Integer> {
         String sshAuthSock = System.getenv("SSH_AUTH_SOCK");
         String sshAgentPid = System.getenv("SSH_AGENT_PID");
 
-        if (sshAuthSock != null && !sshAuthSock.isEmpty() && 
+        if (sshAuthSock != null && !sshAuthSock.isEmpty() &&
             sshAgentPid != null && !sshAgentPid.isEmpty()) {
             if (!quiet) {
                 out.println("# ssh-agent is already running (SSH_AUTH_SOCK=" + sshAuthSock + ")");
-                out.println("# Adding key to existing agent...");
+                out.println("# Clearing existing keys and adding new key...");
                 out.println();
             }
-            // Just add the key to existing agent
-            out.print("ssh-add");
+            // Clear existing keys and add the new one
+            out.print("ssh-add -D && ssh-add");
             if (lifetime != null) {
                 out.print(" -t " + lifetime);
             }

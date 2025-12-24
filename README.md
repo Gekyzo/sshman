@@ -12,6 +12,7 @@
 - 🔑 **Generate SSH Keys** - Create ED25519, RSA, or ECDSA keys with sensible defaults
 - 📁 **Folder Organization** - Organize keys with nested folder structures (e.g., `work/project-a`)
 - 🚀 **Use SSH Keys** - Start ssh-agent and add keys with a single command
+- 🔄 **Auto-Directory Switching** - Automatically load SSH keys per project directory (like `.nvmrc`)
 - 📋 **List Keys** - View all SSH keys with detailed information (type, permissions, modification dates)
 - 🔍 **Inspect Keys** - Display comprehensive key information including fingerprints and security warnings
 - 🛡️ **Security Checks** - Detect insecure file permissions and weak key types
@@ -61,12 +62,12 @@ Alternatively, add the project directory to your `PATH`:
 export PATH="$PATH:/path/to/sshman"
 ```
 
-### Shell Tab Completion (Recommended)
+### Shell Tab Completion and Auto-Switching (Recommended)
 
-Enable tab completion for commands and SSH key names:
+Enable tab completion and auto-directory SSH key switching:
 
 ```bash
-# Install completion for your shell
+# Install completion and hooks for your shell
 cd completions
 ./install.sh
 
@@ -75,10 +76,15 @@ source ~/.bashrc  # for bash
 source ~/.zshrc   # for zsh
 ```
 
-Now you can use tab completion:
+This installs:
+- **Tab completion** for commands and SSH key names
+- **Auto-directory switching hooks** that load keys from `.sshman` files
+
+Now you can use:
 ```bash
-./sshman use [TAB]  # Lists available SSH keys
-./sshman [TAB]      # Lists available commands
+./sshman use [TAB]     # Lists available SSH keys
+./sshman [TAB]         # Lists available commands
+./sshman init [TAB]    # Lists available SSH keys for .sshman file
 ```
 
 See [completions/README.md](completions/README.md) for detailed installation instructions.
@@ -91,6 +97,11 @@ sshman generate --use work/github --comment "Work GitHub account"
 
 # Start ssh-agent and add the key (recommended workflow)
 eval "$(sshman use work/github/id_github_ed25519 --quiet)"
+
+# Enable auto-loading for a project directory
+cd ~/projects/work-project
+sshman init work/github/id_github_ed25519
+# Now this key will auto-load whenever you cd into this directory!
 
 # Generate a simple key with a custom name
 sshman generate --name my-key --algo ed25519
@@ -254,6 +265,111 @@ eval "$(ssh-agent -s)" && ssh-add /home/user/.ssh/CiroPersonal
 ```bash
 # List keys currently in ssh-agent
 ssh-add -l
+```
+
+### Auto-Directory SSH Key Switching
+
+sshman can automatically load SSH keys when you enter directories, similar to how `.sdkmanrc` or `.nvmrc` work. This eliminates the need to manually switch keys when working on different projects.
+
+#### Setup
+
+First, make sure you've installed the shell hooks during completion installation:
+
+```bash
+cd completions
+./install.sh
+
+# Restart your shell or reload configuration
+source ~/.bashrc  # for bash
+source ~/.zshrc   # for zsh
+```
+
+#### Create .sshman Files
+
+Use the `init` command to create a `.sshman` file in your project directory:
+
+```bash
+# Navigate to your project directory
+cd ~/projects/work-project
+
+# Create .sshman file with the desired SSH key
+sshman init work/gitlab/id_gitlab_ed25519
+
+# The .sshman file is created with the key name
+cat .sshman
+# Output: work/gitlab/id_gitlab_ed25519
+```
+
+#### How It Works
+
+Once you have `.sshman` files in your project directories, the shell hook will automatically:
+
+1. Detect when you `cd` into a directory
+2. Search for a `.sshman` file in the current directory or parent directories
+3. Read the key name from the file
+4. Automatically run `eval "$(sshman use <key-name> --quiet)"`
+
+**Example Workflow:**
+
+```bash
+# Create .sshman files for different projects
+cd ~/projects/work-project
+sshman init work/gitlab/id_gitlab_ed25519
+
+cd ~/projects/personal-project
+sshman init personal/github/id_github_ed25519
+
+cd ~/projects/client-deployment
+sshman init work/production/deploy/id_deploy_ed25519
+
+# Now, keys are automatically loaded when you enter directories
+cd ~/projects/work-project
+# Automatically loads: work/gitlab/id_gitlab_ed25519
+
+cd ~/projects/personal-project
+# Automatically loads: personal/github/id_github_ed25519
+
+# Verify the current key
+ssh-add -l
+```
+
+#### Parent Directory Traversal
+
+The hook searches parent directories for `.sshman` files, similar to how git searches for `.git`:
+
+```
+~/projects/
+├── monorepo/
+│   ├── .sshman              # Contains: work/gitlab/id_gitlab_ed25519
+│   ├── frontend/
+│   │   └── src/
+│   └── backend/
+│       └── api/
+
+# Entering any subdirectory will use the key from the parent .sshman
+cd ~/projects/monorepo/frontend/src  # Uses work/gitlab/id_gitlab_ed25519
+cd ~/projects/monorepo/backend/api   # Uses work/gitlab/id_gitlab_ed25519
+```
+
+#### Updating .sshman Files
+
+To change the SSH key for a directory, use the `--force` flag:
+
+```bash
+cd ~/projects/work-project
+sshman init work/new-key --force
+```
+
+#### Manual Override
+
+You can always manually override the auto-loaded key:
+
+```bash
+cd ~/projects/work-project
+# Auto-loads: work/gitlab/id_gitlab_ed25519
+
+# Manually switch to a different key
+eval "$(sshman use personal/github/id_github_ed25519 --quiet)"
 ```
 
 ### List SSH Keys

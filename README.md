@@ -79,6 +79,7 @@ source ~/.zshrc   # for zsh
 This installs:
 - **Tab completion** for commands and SSH key names
 - **Auto-directory switching hooks** that load keys from `.sshman` files
+- **Homebrew zsh completion support** for macOS users (auto-detected)
 
 Now you can use:
 ```bash
@@ -245,7 +246,7 @@ sshman use <TAB>  # Shows available SSH keys
 
 **How it works:**
 - Detects if ssh-agent is already running via `SSH_AUTH_SOCK` and `SSH_AGENT_PID`
-- If agent is running, adds the key to the existing agent
+- If agent is running, **clears all existing keys** and adds the new key (prevents conflicts)
 - If no agent is running, starts a new agent and adds the key
 - `--quiet` mode outputs only the command for use with `eval`
 - `--time` sets how long the key remains in the agent (in seconds)
@@ -259,6 +260,9 @@ sshman use <TAB>  # Shows available SSH keys
 
 eval "$(ssh-agent -s)" && ssh-add /home/user/.ssh/CiroPersonal
 ```
+
+**Note on Key Switching:**
+When using `sshman use` with an existing ssh-agent, all currently loaded keys are automatically cleared before adding the new key. This ensures only the intended key is active and prevents authentication conflicts when working across different projects.
 
 **Verify the key was added:**
 
@@ -359,6 +363,8 @@ To change the SSH key for a directory, use the `--force` flag:
 cd ~/projects/work-project
 sshman init work/new-key --force
 ```
+
+**Important:** `.sshman` files should be added to your `.gitignore` as they contain user-specific SSH key preferences. sshman automatically adds `.sshman` to the project's `.gitignore` when you run `init` for the first time.
 
 #### Manual Override
 

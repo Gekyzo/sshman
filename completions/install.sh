@@ -6,6 +6,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASH_COMPLETION_FILE="$SCRIPT_DIR/sshman_completion.bash"
 ZSH_COMPLETION_FILE="$SCRIPT_DIR/_sshman"
+BASH_HOOKS_FILE="$SCRIPT_DIR/sshman_hooks.bash"
+ZSH_HOOKS_FILE="$SCRIPT_DIR/sshman_hooks.zsh"
 
 echo "sshman Tab Completion Installer"
 echo "================================"
@@ -44,7 +46,7 @@ if [ "$SHELL_TYPE" = "bash" ]; then
         # Add source line to .bashrc if not already there
         BASHRC="$HOME/.bashrc"
         SOURCE_LINE="[ -f ~/.bash_completion.d/sshman_completion.bash ] && source ~/.bash_completion.d/sshman_completion.bash"
-        
+
         if ! grep -q "sshman_completion.bash" "$BASHRC" 2>/dev/null; then
             echo "" >> "$BASHRC"
             echo "# sshman completion" >> "$BASHRC"
@@ -53,6 +55,22 @@ if [ "$SHELL_TYPE" = "bash" ]; then
         else
             echo "  (already sourced in $BASHRC)"
         fi
+    fi
+
+    # Install hooks for auto-directory switching
+    echo ""
+    echo "Installing bash hooks for auto-directory switching..."
+    mkdir -p ~/.bash_completion.d
+    cp "$BASH_HOOKS_FILE" ~/.bash_completion.d/sshman_hooks.bash
+    echo "✓ Installed to ~/.bash_completion.d/sshman_hooks.bash"
+
+    HOOKS_LINE="[ -f ~/.bash_completion.d/sshman_hooks.bash ] && source ~/.bash_completion.d/sshman_hooks.bash"
+    if ! grep -q "sshman_hooks.bash" "$BASHRC" 2>/dev/null; then
+        echo "# sshman auto-directory switching" >> "$BASHRC"
+        echo "$HOOKS_LINE" >> "$BASHRC"
+        echo "✓ Added hooks to $BASHRC"
+    else
+        echo "  (hooks already sourced in $BASHRC)"
     fi
     
     echo ""
@@ -77,7 +95,7 @@ elif [ "$SHELL_TYPE" = "zsh" ]; then
         ZSHRC="$HOME/.zshrc"
         FPATH_LINE='fpath=(~/.zsh/completion $fpath)'
         COMPINIT_LINE='autoload -Uz compinit && compinit'
-        
+
         if ! grep -q "\.zsh/completion" "$ZSHRC" 2>/dev/null; then
             echo "" >> "$ZSHRC"
             echo "# sshman completion" >> "$ZSHRC"
@@ -87,6 +105,23 @@ elif [ "$SHELL_TYPE" = "zsh" ]; then
         else
             echo "  (already configured in $ZSHRC)"
         fi
+    fi
+
+    # Install hooks for auto-directory switching
+    echo ""
+    echo "Installing zsh hooks for auto-directory switching..."
+    mkdir -p ~/.zsh
+    cp "$ZSH_HOOKS_FILE" ~/.zsh/sshman_hooks.zsh
+    echo "✓ Installed to ~/.zsh/sshman_hooks.zsh"
+
+    HOOKS_LINE="[ -f ~/.zsh/sshman_hooks.zsh ] && source ~/.zsh/sshman_hooks.zsh"
+    if ! grep -q "sshman_hooks.zsh" "$ZSHRC" 2>/dev/null; then
+        echo "" >> "$ZSHRC"
+        echo "# sshman auto-directory switching" >> "$ZSHRC"
+        echo "$HOOKS_LINE" >> "$ZSHRC"
+        echo "✓ Added hooks to $ZSHRC"
+    else
+        echo "  (hooks already sourced in $ZSHRC)"
     fi
     
     echo ""

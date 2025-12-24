@@ -10,6 +10,7 @@ _sshman() {
         'list:List all SSH keys in ~/.ssh'
         'info:Show detailed information about a specific SSH key'
         'use:Start ssh-agent and add the specified SSH key'
+        'init:Create a .sshman file in the current directory'
         'help:Display help information about the specified command'
     )
 
@@ -39,6 +40,9 @@ _sshman() {
                     ;;
                 use|set)
                     _sshman_use
+                    ;;
+                init)
+                    _sshman_init
                     ;;
                 help)
                     _describe -t commands 'sshman commands' commands
@@ -84,17 +88,33 @@ _sshman_info() {
 _sshman_use() {
     local -a keys
     local ssh_dir="${HOME}/.ssh"
-    
+
     # Get list of private keys for completion
     if [[ -d "$ssh_dir" ]]; then
         keys=(${(f)"$(find "$ssh_dir" -type f ! -name "*.pub" ! -name "config" ! -name "known_hosts" ! -name "authorized_keys" -exec sh -c 'head -c 10 "$1" 2>/dev/null | grep -q "^-----BEGIN" && basename "$1"' _ {} \; 2>/dev/null)"})
     fi
-    
+
     _arguments \
         '(-h --help)'{-h,--help}'[Show help information]' \
         '--path[Custom SSH directory path]:path:_directories' \
         '(-t --time)'{-t,--time}'[Lifetime of identities in seconds]:seconds:' \
         '(-q --quiet)'{-q,--quiet}'[Quiet mode - only output eval command]' \
+        '1:key name:($keys)'
+}
+
+_sshman_init() {
+    local -a keys
+    local ssh_dir="${HOME}/.ssh"
+
+    # Get list of private keys for completion
+    if [[ -d "$ssh_dir" ]]; then
+        keys=(${(f)"$(find "$ssh_dir" -type f ! -name "*.pub" ! -name "config" ! -name "known_hosts" ! -name "authorized_keys" -exec sh -c 'head -c 10 "$1" 2>/dev/null | grep -q "^-----BEGIN" && basename "$1"' _ {} \; 2>/dev/null)"})
+    fi
+
+    _arguments \
+        '(-h --help)'{-h,--help}'[Show help information]' \
+        '(-f --force)'{-f,--force}'[Overwrite existing .sshman file]' \
+        '--path[Custom SSH directory path]:path:_directories' \
         '1:key name:($keys)'
 }
 

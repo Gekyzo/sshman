@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examples - sshman</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <span class="logo">🔐</span>
+                <h1>sshman</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="usage.html">Usage Guide</a></li>
+                <li><a href="examples.html" class="active">Examples</a></li>
+                <li><a href="https://github.com/yourusername/sshman" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="docs-container">
+        <aside class="sidebar">
+            <nav class="docs-nav">
+                <h3>Examples</h3>
+                <ul>
+                    <li><a href="#quick-start">Quick Start</a></li>
+                    <li><a href="#github">GitHub Setup</a></li>
+                    <li><a href="#work">Work Environment</a></li>
+                    <li><a href="#multiple-accounts">Multiple Accounts</a></li>
+                    <li><a href="#server-deployment">Server Deployment</a></li>
+                    <li><a href="#key-rotation">Key Rotation</a></li>
+                    <li><a href="#team-workflow">Team Workflow</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="docs-content">
+            <h1>Examples</h1>
+            <p>Real-world examples and common scenarios for using sshman.</p>
+
+            <section id="quick-start">
+                <h2>Quick Start Examples</h2>
+                
+                <div class="example-scenario">
+                    <h3>Generate Your First SSH Key</h3>
+                    <p>Create a simple Ed25519 key for general use:</p>
+                    <div class="terminal">
+                        <div class="terminal-body">
+                            <pre><code><span class="prompt">$</span> sshman generate --algo ed25519 --use personal
+<span class="output">✓ SSH key generated successfully!
+  Private key: /home/user/.ssh/id_personal_ed25519
+  Public key:  /home/user/.ssh/id_personal_ed25519.pub
+
+Next steps:
+  1. Copy your public key: cat ~/.ssh/id_personal_ed25519.pub
+  2. Add it to your remote server or service
+  3. Test the connection: ssh -i ~/.ssh/id_personal_ed25519 user@server</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example-scenario">
+                    <h3>List All Your Keys</h3>
+                    <p>See what keys you already have:</p>
+                    <div class="terminal">
+                        <div class="terminal-body">
+                            <pre><code><span class="prompt">$</span> sshman list
+<span class="output">Found 3 SSH keys in /home/user/.ssh:
+
+Key: id_personal_ed25519
+  Algorithm: Ed25519
+  Key Size:  256 bits
+  Fingerprint (SHA256): SHA256:abc123def456...
+  Public Key: /home/user/.ssh/id_personal_ed25519.pub
+
+Key: id_rsa
+  Algorithm: RSA
+  Key Size:  2048 bits
+  Fingerprint (SHA256): SHA256:xyz789uvw012...
+  Public Key: /home/user/.ssh/id_rsa.pub
+
+Key: id_work_ecdsa
+  Algorithm: ECDSA
+  Key Size:  521 bits
+  Fingerprint (SHA256): SHA256:mno345pqr678...
+  Public Key: /home/user/.ssh/id_work_ecdsa.pub</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="github">
+                <h2>GitHub Setup</h2>
+                
+                <div class="example-scenario">
+                    <h3>Create a Key for GitHub</h3>
+                    <p>Generate an Ed25519 key specifically for GitHub with a descriptive comment:</p>
+                    <div class="terminal">
+                        <div class="terminal-body">
+                            <pre><code><span class="prompt">$</span> sshman generate --algo ed25519 --use github --comment "john.doe@example.com"
+<span class="output">✓ SSH key generated successfully!
+  Private key: /home/user/.ssh/id_github_ed25519
+  Public key:  /home/user/.ssh/id_github_ed25519.pub</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example-scenario">
+                    <h3>Add the Key to GitHub</h3>
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Step 1: Copy your public key</h4>
+                            <pre><code>cat ~/.ssh/id_github_ed25519.pub | pbcopy  # macOS
+cat ~/.ssh/id_github_ed25519.pub | xclip -selection clipboard  # Linux</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 2: Add to GitHub</h4>
+                            <ol>
+                                <li>Go to GitHub Settings → SSH and GPG keys</li>
+                                <li>Click "New SSH key"</li>
+                                <li>Paste your public key</li>
+                                <li>Give it a descriptive title (e.g., "Work Laptop")</li>
+                            </ol>
+                        </div>
+                        <div class="step">
+                            <h4>Step 3: Configure SSH</h4>
+                            <p>Add to your <code>~/.ssh/config</code>:</p>
+                            <pre><code>Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_github_ed25519
+    IdentitiesOnly yes</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 4: Test the connection</h4>
+                            <pre><code><span class="prompt">$</span> ssh -T git@github.com
+<span class="output">Hi username! You've successfully authenticated, but GitHub does not provide shell access.</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="work">
+                <h2>Work Environment Setup</h2>
+                
+                <div class="example-scenario">
+                    <h3>Secure Work Key with Passphrase</h3>
+                    <p>Create a highly secure RSA key for production servers:</p>
+                    <div class="terminal">
+                        <div class="terminal-body">
+                            <pre><code><span class="prompt">$</span> sshman generate --algo rsa --bits 4096 --use work-prod --passphrase --comment "prod-access"
+<span class="output">Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+✓ SSH key generated successfully!
+  Private key: /home/user/.ssh/id_work-prod_rsa
+  Public key:  /home/user/.ssh/id_work-prod_rsa.pub</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example-scenario">
+                    <h3>Deploy Key to Multiple Servers</h3>
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Step 1: Generate the key</h4>
+                            <pre><code>sshman generate --algo ed25519 --use work-servers</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 2: Copy to servers</h4>
+                            <pre><code>ssh-copy-id -i ~/.ssh/id_work-servers_ed25519 user@server1.example.com
+ssh-copy-id -i ~/.ssh/id_work-servers_ed25519 user@server2.example.com
+ssh-copy-id -i ~/.ssh/id_work-servers_ed25519 user@server3.example.com</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 3: Configure SSH for easy access</h4>
+                            <p>Add to <code>~/.ssh/config</code>:</p>
+                            <pre><code>Host server1
+    HostName server1.example.com
+    User deploy
+    IdentityFile ~/.ssh/id_work-servers_ed25519
+
+Host server2
+    HostName server2.example.com
+    User deploy
+    IdentityFile ~/.ssh/id_work-servers_ed25519
+
+Host server3
+    HostName server3.example.com
+    User deploy
+    IdentityFile ~/.ssh/id_work-servers_ed25519</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 4: Connect easily</h4>
+                            <pre><code>ssh server1
+ssh server2
+ssh server3</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="multiple-accounts">
+                <h2>Multiple Accounts</h2>
+                
+                <div class="example-scenario">
+                    <h3>Personal and Work GitHub Accounts</h3>
+                    <p>Manage multiple GitHub accounts on the same machine:</p>
+                    
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Step 1: Generate keys for each account</h4>
+                            <pre><code><span class="prompt">$</span> sshman generate --algo ed25519 --use github-personal --comment "personal@gmail.com"
+<span class="prompt">$</span> sshman generate --algo ed25519 --use github-work --comment "work@company.com"</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 2: Configure SSH with different hosts</h4>
+                            <p>Edit <code>~/.ssh/config</code>:</p>
+                            <pre><code># Personal GitHub
+Host github.com-personal
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_github-personal_ed25519
+    IdentitiesOnly yes
+
+# Work GitHub
+Host github.com-work
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_github-work_ed25519
+    IdentitiesOnly yes</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 3: Clone repositories with the correct account</h4>
+                            <pre><code># Personal repositories
+git clone git@github.com-personal:username/personal-repo.git
+
+# Work repositories
+git clone git@github.com-work:company/work-repo.git</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 4: Configure git for existing repos</h4>
+                            <pre><code># For personal repo
+cd personal-repo
+git remote set-url origin git@github.com-personal:username/personal-repo.git
+
+# For work repo
+cd work-repo
+git remote set-url origin git@github.com-work:company/work-repo.git</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="server-deployment">
+                <h2>Server Deployment</h2>
+                
+                <div class="example-scenario">
+                    <h3>CI/CD Pipeline Key</h3>
+                    <p>Create a key for automated deployments (no passphrase for automation):</p>
+                    <div class="terminal">
+                        <div class="terminal-body">
+                            <pre><code><span class="prompt">$</span> sshman generate --algo ed25519 --use ci-deploy --comment "ci-bot@company.com"
+<span class="output">✓ SSH key generated successfully!
+  Private key: /home/user/.ssh/id_ci-deploy_ed25519
+  Public key:  /home/user/.ssh/id_ci-deploy_ed25519.pub</span></code></pre>
+                        </div>
+                    </div>
+                    <div class="note warning">
+                        <strong>Security Note:</strong> For CI/CD keys, use strict server-side restrictions:
+                        <ul>
+                            <li>Limit to specific commands with <code>command=</code> in authorized_keys</li>
+                            <li>Restrict source IPs with <code>from=</code> option</li>
+                            <li>Use dedicated service accounts with minimal permissions</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="example-scenario">
+                    <h3>Bastion Host Setup</h3>
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Step 1: Create bastion key</h4>
+                            <pre><code>sshman generate --algo ed25519 --use bastion --passphrase</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 2: Configure SSH with ProxyJump</h4>
+                            <p>Edit <code>~/.ssh/config</code>:</p>
+                            <pre><code>Host bastion
+    HostName bastion.company.com
+    User admin
+    IdentityFile ~/.ssh/id_bastion_ed25519
+
+Host internal-server
+    HostName 10.0.1.100
+    User deploy
+    ProxyJump bastion
+    IdentityFile ~/.ssh/id_work-servers_ed25519</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 3: Connect through bastion</h4>
+                            <pre><code><span class="prompt">$</span> ssh internal-server
+<span class="comment"># Automatically connects through bastion</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="key-rotation">
+                <h2>Key Rotation</h2>
+                
+                <div class="example-scenario">
+                    <h3>Rotate an Existing Key</h3>
+                    <p>Best practice: Rotate keys every 6-12 months</p>
+                    
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Step 1: Check current key info</h4>
+                            <pre><code><span class="prompt">$</span> sshman info id_work_ed25519
+<span class="output">SSH Key Information: id_work_ed25519
+
+Key Details:
+  Type: Ed25519
+  Size: 256 bits
+  Comment: user@hostname
+  Created: 2024-01-15
+  
+Fingerprints:
+  SHA256: SHA256:abc123def456...</span></code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 2: Generate new key with updated tag</h4>
+                            <pre><code><span class="prompt">$</span> sshman generate --algo ed25519 --use work --comment "rotated-2025-12"
+<span class="output">⚠ Warning: Key 'id_work_ed25519' already exists
+Use --force to overwrite or choose a different name</span>
+
+<span class="prompt">$</span> sshman generate --algo ed25519 --use work --comment "rotated-2025-12" --force
+<span class="output">✓ SSH key generated successfully!
+  Private key: /home/user/.ssh/id_work_ed25519
+  Public key:  /home/user/.ssh/id_work_ed25519.pub</span></code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 3: Update on all services</h4>
+                            <pre><code># Copy new public key
+cat ~/.ssh/id_work_ed25519.pub
+
+# Update on:
+# - GitHub/GitLab
+# - All servers
+# - Cloud providers
+# - Any other services</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 4: Verify and test</h4>
+                            <pre><code># Test each service
+ssh -T git@github.com
+ssh user@server.example.com
+
+# If all works, the old key has been replaced</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="team-workflow">
+                <h2>Team Workflow</h2>
+                
+                <div class="example-scenario">
+                    <h3>Onboarding New Team Member</h3>
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h4>Step 1: Team member generates their key</h4>
+                            <pre><code>sshman generate --algo ed25519 --use company --comment "jane.smith@company.com" --passphrase</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 2: Share public key with admin</h4>
+                            <pre><code># Email or Slack
+cat ~/.ssh/id_company_ed25519.pub</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 3: Admin adds key to all servers</h4>
+                            <pre><code># On each server
+echo "ssh-ed25519 AAAAC3... jane.smith@company.com" >> ~/.ssh/authorized_keys</code></pre>
+                        </div>
+                        <div class="step">
+                            <h4>Step 4: Team member tests access</h4>
+                            <pre><code>ssh user@dev-server.company.com
+ssh user@staging-server.company.com</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example-scenario">
+                    <h3>Key Audit Across Team</h3>
+                    <p>Regular security audit to review all SSH keys:</p>
+                    <div class="terminal">
+                        <div class="terminal-body">
+                            <pre><code><span class="prompt">$</span> sshman list
+<span class="output">Found 5 SSH keys in /home/user/.ssh:</span>
+
+<span class="comment"># Review each key</span>
+<span class="prompt">$</span> sshman info id_github_ed25519
+<span class="prompt">$</span> sshman info id_work_rsa
+<span class="prompt">$</span> sshman info id_personal_ed25519
+
+<span class="comment"># Create audit report</span>
+<span class="prompt">$</span> sshman list > ssh-keys-audit-$(date +%Y%m%d).txt</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tips-section">
+                <h2>💡 Pro Tips</h2>
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <h3>Use SSH Agent</h3>
+                        <p>Add keys to ssh-agent to avoid typing passphrases repeatedly:</p>
+                        <pre><code>eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_work_ed25519</code></pre>
+                    </div>
+                    <div class="tip-card">
+                        <h3>Backup Your Keys</h3>
+                        <p>Keep encrypted backups of your private keys in a secure location:</p>
+                        <pre><code>tar -czf ssh-backup.tar.gz ~/.ssh/
+gpg -c ssh-backup.tar.gz</code></pre>
+                    </div>
+                    <div class="tip-card">
+                        <h3>Document Your Keys</h3>
+                        <p>Keep a record of which keys are used where:</p>
+                        <pre><code>sshman list > ~/.ssh/KEY_INVENTORY.txt</code></pre>
+                    </div>
+                    <div class="tip-card">
+                        <h3>Use SSH Config</h3>
+                        <p>Create shortcuts in <code>~/.ssh/config</code> for easier access:</p>
+                        <pre><code>Host prod
+    HostName prod.example.com
+    User deploy
+    IdentityFile ~/.ssh/id_work_ed25519</code></pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 sshman - SSH Key Management CLI</p>
+            <p>Licensed under the <a href="https://github.com/yourusername/sshman/blob/main/LICENSE">MIT License</a></p>
+        </div>
+    </footer>
+</body>
+</html>

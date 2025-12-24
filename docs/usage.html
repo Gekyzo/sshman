@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Guide - sshman</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <span class="logo">🔐</span>
+                <h1>sshman</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="usage.html" class="active">Usage Guide</a></li>
+                <li><a href="examples.html">Examples</a></li>
+                <li><a href="https://github.com/yourusername/sshman" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="docs-container">
+        <aside class="sidebar">
+            <nav class="docs-nav">
+                <h3>Usage Guide</h3>
+                <ul>
+                    <li><a href="#overview">Overview</a></li>
+                    <li><a href="#generate">Generate Command</a></li>
+                    <li><a href="#list">List Command</a></li>
+                    <li><a href="#info">Info Command</a></li>
+                    <li><a href="#algorithms">Algorithms</a></li>
+                    <li><a href="#best-practices">Best Practices</a></li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="docs-content">
+            <h1>Usage Guide</h1>
+
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>sshman is a command-line tool for managing SSH keys. It provides three main commands:</p>
+                <ul>
+                    <li><strong>generate</strong> - Create new SSH key pairs</li>
+                    <li><strong>list</strong> - Display all SSH keys</li>
+                    <li><strong>info</strong> - Show detailed information about a specific key</li>
+                </ul>
+                <div class="note">
+                    <strong>Note:</strong> All commands support <code>--help</code> flag for detailed usage information.
+                </div>
+            </section>
+
+            <section id="generate">
+                <h2>Generate Command</h2>
+                <p>Create new SSH key pairs with customizable options.</p>
+
+                <h3>Basic Syntax</h3>
+                <pre><code>sshman generate [OPTIONS]</code></pre>
+
+                <h3>Options</h3>
+                <table class="options-table">
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Description</th>
+                            <th>Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>-a, --algo &lt;ALGORITHM&gt;</code></td>
+                            <td>Key algorithm (rsa, dsa, ecdsa, ed25519)</td>
+                            <td>ed25519</td>
+                        </tr>
+                        <tr>
+                            <td><code>-b, --bits &lt;SIZE&gt;</code></td>
+                            <td>Key size in bits</td>
+                            <td>Algorithm-dependent</td>
+                        </tr>
+                        <tr>
+                            <td><code>-u, --use &lt;TAG&gt;</code></td>
+                            <td>Use case tag (work, personal, github, etc.)</td>
+                            <td>None</td>
+                        </tr>
+                        <tr>
+                            <td><code>-n, --name &lt;NAME&gt;</code></td>
+                            <td>Custom key name</td>
+                            <td>id_&lt;use&gt;_&lt;algo&gt;</td>
+                        </tr>
+                        <tr>
+                            <td><code>-c, --comment &lt;TEXT&gt;</code></td>
+                            <td>Comment for the key</td>
+                            <td>user@hostname</td>
+                        </tr>
+                        <tr>
+                            <td><code>-p, --passphrase</code></td>
+                            <td>Prompt for passphrase protection</td>
+                            <td>No passphrase</td>
+                        </tr>
+                        <tr>
+                            <td><code>-o, --output &lt;DIR&gt;</code></td>
+                            <td>Output directory</td>
+                            <td>~/.ssh</td>
+                        </tr>
+                        <tr>
+                            <td><code>-f, --force</code></td>
+                            <td>Overwrite existing keys</td>
+                            <td>false</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Examples</h3>
+                <div class="example">
+                    <h4>Generate Ed25519 key for work</h4>
+                    <pre><code>sshman generate --algo ed25519 --use work</code></pre>
+                    <p>Creates: <code>id_work_ed25519</code> and <code>id_work_ed25519.pub</code></p>
+                </div>
+
+                <div class="example">
+                    <h4>Generate RSA key with custom size</h4>
+                    <pre><code>sshman generate --algo rsa --bits 4096 --use github</code></pre>
+                    <p>Creates a 4096-bit RSA key for GitHub</p>
+                </div>
+
+                <div class="example">
+                    <h4>Generate with passphrase and custom comment</h4>
+                    <pre><code>sshman generate --algo ed25519 --use personal --passphrase --comment "john@mycompany.com"</code></pre>
+                    <p>Prompts for passphrase and adds custom comment</p>
+                </div>
+
+                <div class="example">
+                    <h4>Generate with fully custom name</h4>
+                    <pre><code>sshman generate --name my_special_key --algo ecdsa --bits 521</code></pre>
+                    <p>Creates: <code>my_special_key</code> and <code>my_special_key.pub</code></p>
+                </div>
+            </section>
+
+            <section id="list">
+                <h2>List Command</h2>
+                <p>Display all SSH keys found in your <code>~/.ssh</code> directory.</p>
+
+                <h3>Basic Syntax</h3>
+                <pre><code>sshman list [OPTIONS]</code></pre>
+
+                <h3>Options</h3>
+                <table class="options-table">
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>-a, --algo &lt;ALGORITHM&gt;</code></td>
+                            <td>Filter by algorithm (rsa, dsa, ecdsa, ed25519)</td>
+                        </tr>
+                        <tr>
+                            <td><code>-d, --dir &lt;PATH&gt;</code></td>
+                            <td>Custom SSH directory (default: ~/.ssh)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Output Format</h3>
+                <p>For each key found, the list command displays:</p>
+                <ul>
+                    <li>Key name</li>
+                    <li>Algorithm type</li>
+                    <li>Key size (bits)</li>
+                    <li>SHA256 fingerprint</li>
+                    <li>Public key location</li>
+                </ul>
+
+                <h3>Examples</h3>
+                <div class="example">
+                    <h4>List all SSH keys</h4>
+                    <pre><code>sshman list</code></pre>
+                </div>
+
+                <div class="example">
+                    <h4>List only Ed25519 keys</h4>
+                    <pre><code>sshman list --algo ed25519</code></pre>
+                </div>
+
+                <div class="example">
+                    <h4>List keys from custom directory</h4>
+                    <pre><code>sshman list --dir /custom/path/to/keys</code></pre>
+                </div>
+            </section>
+
+            <section id="info">
+                <h2>Info Command</h2>
+                <p>Display comprehensive information about a specific SSH key.</p>
+
+                <h3>Basic Syntax</h3>
+                <pre><code>sshman info &lt;KEY_NAME&gt; [OPTIONS]</code></pre>
+
+                <h3>Options</h3>
+                <table class="options-table">
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>-d, --dir &lt;PATH&gt;</code></td>
+                            <td>Custom SSH directory (default: ~/.ssh)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Output Information</h3>
+                <ul>
+                    <li>Key type and algorithm</li>
+                    <li>Key size in bits</li>
+                    <li>Comment/identifier</li>
+                    <li>MD5 fingerprint</li>
+                    <li>SHA256 fingerprint</li>
+                    <li>File locations (private and public keys)</li>
+                    <li>File permissions</li>
+                </ul>
+
+                <h3>Examples</h3>
+                <div class="example">
+                    <h4>View info for work key</h4>
+                    <pre><code>sshman info id_work_ed25519</code></pre>
+                </div>
+
+                <div class="example">
+                    <h4>View info with key in custom directory</h4>
+                    <pre><code>sshman info my_key --dir /custom/keys</code></pre>
+                </div>
+
+                <div class="note warning">
+                    <strong>Note:</strong> Provide the key name without the <code>.pub</code> extension.
+                </div>
+            </section>
+
+            <section id="algorithms">
+                <h2>SSH Key Algorithms</h2>
+                <p>sshman supports four SSH key algorithms, each with different characteristics:</p>
+
+                <div class="algorithm-card">
+                    <h3>Ed25519 (Recommended)</h3>
+                    <ul>
+                        <li><strong>Size:</strong> 256 bits (fixed)</li>
+                        <li><strong>Security:</strong> Excellent</li>
+                        <li><strong>Speed:</strong> Very fast</li>
+                        <li><strong>Compatibility:</strong> Modern systems (OpenSSH 6.5+)</li>
+                    </ul>
+                    <p><strong>Use when:</strong> You need the best security and performance on modern systems.</p>
+                </div>
+
+                <div class="algorithm-card">
+                    <h3>RSA</h3>
+                    <ul>
+                        <li><strong>Size:</strong> 2048-4096 bits (recommended: 4096)</li>
+                        <li><strong>Security:</strong> Good (with 4096 bits)</li>
+                        <li><strong>Speed:</strong> Moderate</li>
+                        <li><strong>Compatibility:</strong> Universal</li>
+                    </ul>
+                    <p><strong>Use when:</strong> You need maximum compatibility with older systems.</p>
+                </div>
+
+                <div class="algorithm-card">
+                    <h3>ECDSA</h3>
+                    <ul>
+                        <li><strong>Size:</strong> 256, 384, or 521 bits</li>
+                        <li><strong>Security:</strong> Good</li>
+                        <li><strong>Speed:</strong> Fast</li>
+                        <li><strong>Compatibility:</strong> Most modern systems</li>
+                    </ul>
+                    <p><strong>Use when:</strong> You want a balance between Ed25519 and RSA.</p>
+                </div>
+
+                <div class="algorithm-card deprecated">
+                    <h3>DSA (Deprecated)</h3>
+                    <ul>
+                        <li><strong>Size:</strong> 1024 bits (fixed)</li>
+                        <li><strong>Security:</strong> Weak (deprecated)</li>
+                        <li><strong>Compatibility:</strong> Legacy systems only</li>
+                    </ul>
+                    <p><strong>Use when:</strong> Only for legacy systems that don't support other algorithms.</p>
+                </div>
+            </section>
+
+            <section id="best-practices">
+                <h2>Best Practices</h2>
+
+                <div class="best-practice">
+                    <h3>🔐 Use Strong Passphrases</h3>
+                    <p>Always protect your private keys with a strong passphrase, especially for sensitive environments.</p>
+                    <pre><code>sshman generate --algo ed25519 --use work --passphrase</code></pre>
+                </div>
+
+                <div class="best-practice">
+                    <h3>🏷️ Tag Your Keys</h3>
+                    <p>Use meaningful tags to organize keys by purpose or environment.</p>
+                    <pre><code>sshman generate --use github --algo ed25519
+sshman generate --use work-prod --algo rsa --bits 4096</code></pre>
+                </div>
+
+                <div class="best-practice">
+                    <h3>📝 Add Descriptive Comments</h3>
+                    <p>Include your email or identifier in the comment for easy identification.</p>
+                    <pre><code>sshman generate --comment "john.doe@company.com"</code></pre>
+                </div>
+
+                <div class="best-practice">
+                    <h3>🔄 Rotate Keys Regularly</h3>
+                    <p>Generate new keys periodically and update them on your servers.</p>
+                </div>
+
+                <div class="best-practice">
+                    <h3>🗂️ Separate Keys by Purpose</h3>
+                    <p>Use different keys for different services (GitHub, work servers, personal projects).</p>
+                </div>
+
+                <div class="best-practice">
+                    <h3>✅ Verify Permissions</h3>
+                    <p>Ensure proper permissions on your SSH directory and keys:</p>
+                    <pre><code>chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_*
+chmod 644 ~/.ssh/id_*.pub</code></pre>
+                </div>
+            </section>
+
+            <section id="troubleshooting">
+                <h2>Troubleshooting</h2>
+
+                <div class="troubleshoot">
+                    <h3>❌ "Key already exists"</h3>
+                    <p><strong>Solution:</strong> Use the <code>--force</code> flag to overwrite, or choose a different name.</p>
+                    <pre><code>sshman generate --use work --force</code></pre>
+                </div>
+
+                <div class="troubleshoot">
+                    <h3>❌ "ssh-keygen not found"</h3>
+                    <p><strong>Solution:</strong> Install OpenSSH tools:</p>
+                    <pre><code># Ubuntu/Debian
+sudo apt-get install openssh-client
+
+# macOS (usually pre-installed)
+brew install openssh</code></pre>
+                </div>
+
+                <div class="troubleshoot">
+                    <h3>❌ "Permission denied"</h3>
+                    <p><strong>Solution:</strong> Check file permissions:</p>
+                    <pre><code>ls -la ~/.ssh/
+chmod 600 ~/.ssh/id_*</code></pre>
+                </div>
+
+                <div class="troubleshoot">
+                    <h3>❌ "Key not found"</h3>
+                    <p><strong>Solution:</strong> Make sure you're using the correct key name without the <code>.pub</code> extension:</p>
+                    <pre><code># ❌ Wrong
+sshman info id_work_ed25519.pub
+
+# ✅ Correct
+sshman info id_work_ed25519</code></pre>
+                </div>
+
+                <div class="troubleshoot">
+                    <h3>❌ "Invalid key size"</h3>
+                    <p><strong>Solution:</strong> Use valid key sizes for each algorithm:</p>
+                    <ul>
+                        <li>RSA: 2048, 3072, 4096</li>
+                        <li>DSA: 1024 (fixed)</li>
+                        <li>ECDSA: 256, 384, 521</li>
+                        <li>Ed25519: 256 (fixed)</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 sshman - SSH Key Management CLI</p>
+            <p>Licensed under the <a href="https://github.com/yourusername/sshman/blob/main/LICENSE">MIT License</a></p>
+        </div>
+    </footer>
+</body>
+</html>

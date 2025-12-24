@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sshman - SSH Key Management CLI</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <span class="logo">🔐</span>
+                <h1>sshman</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="usage.html">Usage Guide</a></li>
+                <li><a href="examples.html">Examples</a></li>
+                <li><a href="https://github.com/yourusername/sshman" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>sshman</h1>
+            <p class="tagline">SSH Centralized CLI - Manage SSH keys and connections with ease</p>
+            <div class="hero-buttons">
+                <a href="#installation" class="btn btn-primary">Get Started</a>
+                <a href="usage.html" class="btn btn-secondary">View Docs</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="features">
+        <div class="container">
+            <h2>Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔑</div>
+                    <h3>Generate Keys</h3>
+                    <p>Create SSH keys with multiple algorithms (RSA, DSA, ECDSA, Ed25519) with custom configurations</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>List Keys</h3>
+                    <p>Discover and display all SSH keys in your ~/.ssh directory with detailed information</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Inspect Keys</h3>
+                    <p>View comprehensive details about specific keys including fingerprints and metadata</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Secure</h3>
+                    <p>Support for passphrase protection and proper file permissions</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Fast & Simple</h3>
+                    <p>Lightweight CLI tool with intuitive commands and clear output</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Tagged Keys</h3>
+                    <p>Organize keys by use case (work, personal, github, etc.)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="installation" class="installation">
+        <div class="container">
+            <h2>Installation</h2>
+            
+            <div class="install-step">
+                <h3>Prerequisites</h3>
+                <ul>
+                    <li>Java 17 or higher</li>
+                    <li>Maven 3.6 or higher</li>
+                    <li>ssh-keygen (usually pre-installed on Linux/macOS)</li>
+                </ul>
+            </div>
+
+            <div class="install-step">
+                <h3>Build from Source</h3>
+                <pre><code># Clone the repository
+git clone https://github.com/yourusername/sshman.git
+cd sshman
+
+# Build the project
+./build.sh
+
+# Run sshman
+./sshman --help</code></pre>
+            </div>
+
+            <div class="install-step">
+                <h3>Add to PATH (Optional)</h3>
+                <pre><code># Add this to your ~/.bashrc or ~/.zshrc
+export PATH="$PATH:/path/to/sshman"
+
+# Then you can run from anywhere
+sshman --help</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <section class="quick-start">
+        <div class="container">
+            <h2>Quick Start</h2>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-button"></span>
+                    <span class="terminal-button"></span>
+                    <span class="terminal-button"></span>
+                </div>
+                <div class="terminal-body">
+                    <pre><code><span class="prompt">$</span> sshman generate --algo ed25519 --use work
+<span class="output">✓ SSH key generated successfully!
+  Private key: /home/user/.ssh/id_work_ed25519
+  Public key:  /home/user/.ssh/id_work_ed25519.pub</span>
+
+<span class="prompt">$</span> sshman list
+<span class="output">Found 3 SSH keys in /home/user/.ssh:
+
+Key: id_work_ed25519
+  Algorithm: Ed25519
+  Key Size:  256 bits
+  Fingerprint (SHA256): SHA256:abc123...
+  Public Key: /home/user/.ssh/id_work_ed25519.pub
+
+Key: id_rsa
+  Algorithm: RSA
+  Key Size:  4096 bits
+  Fingerprint (SHA256): SHA256:def456...
+  Public Key: /home/user/.ssh/id_rsa.pub</span>
+
+<span class="prompt">$</span> sshman info work-key
+<span class="output">SSH Key Information: work-key
+
+Key Details:
+  Type: Ed25519
+  Size: 256 bits
+  Comment: user@hostname
+  
+Fingerprints:
+  MD5:    MD5:12:34:56:78:90:ab:cd:ef
+  SHA256: SHA256:abc123def456...</span></code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="commands-overview">
+        <div class="container">
+            <h2>Commands Overview</h2>
+            <div class="commands-grid">
+                <div class="command-card">
+                    <h3><code>generate</code></h3>
+                    <p>Create new SSH key pairs with various algorithms and configurations</p>
+                    <a href="usage.html#generate" class="btn-link">Learn more →</a>
+                </div>
+                <div class="command-card">
+                    <h3><code>list</code></h3>
+                    <p>Display all SSH keys found in your ~/.ssh directory</p>
+                    <a href="usage.html#list" class="btn-link">Learn more →</a>
+                </div>
+                <div class="command-card">
+                    <h3><code>info</code></h3>
+                    <p>Show detailed information about a specific SSH key</p>
+                    <a href="usage.html#info" class="btn-link">Learn more →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 sshman - SSH Key Management CLI</p>
+            <p>Licensed under the <a href="https://github.com/yourusername/sshman/blob/main/LICENSE">MIT License</a></p>
+        </div>
+    </footer>
+</body>
+</html>

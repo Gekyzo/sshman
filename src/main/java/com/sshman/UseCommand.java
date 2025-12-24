@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 
 @Command(
     name = "use",
+    aliases = {"set"},
     description = "Start ssh-agent and add the specified SSH key",
     mixinStandardHelpOptions = true
 )

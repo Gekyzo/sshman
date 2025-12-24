@@ -7,10 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-12-24
+
 ### Added
 - Connection profile management with `connect-new` and `connect` commands
 - Profile storage in `~/.sshman/profiles.json`
 - Tab completion support for connection profile aliases
+- CHANGELOG.md documenting all project changes
+- ROADMAP.md outlining future features and planned improvements
+- GitHub Actions workflow for automated releases
+
+### Improved
+- Documentation with comprehensive connection profile examples
+- README with SSH commands reference section
+
+### Technical Debt
+- Migrated feature specifications from seeds.md to CHANGELOG and ROADMAP
 
 ## [0.1.0] - 2024-01-20
 
@@ -66,6 +78,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI framework using picocli
 - Project structure and build configuration
 
-[Unreleased]: https://github.com/Gekyzo/sshman/compare/v0.1.0...HEAD
+[0.1.1]: https://github.com/Gekyzo/sshman/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Gekyzo/sshman/releases/tag/v0.1.0
 [0.0.1]: https://github.com/Gekyzo/sshman/releases/tag/v0.0.1

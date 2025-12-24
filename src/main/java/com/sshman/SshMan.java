@@ -16,12 +16,14 @@ import java.util.concurrent.Callable;
         GenerateCommand.class,  // Actual subcommand classes
         ListCommand.class,
         InfoCommand.class,
+        UseCommand.class,
         CommandLine.HelpCommand.class
     },
     footer = "%nExamples:%n" +
         "  sshman generate --algo ed25519 --use work%n" +
         "  sshman list%n" +
-        "  sshman info work-key"
+        "  sshman info work-key%n" +
+        "  eval \"$(sshman use id_ed25519 --quiet)\""
 )
 public class SshMan implements Callable<Integer> {
 

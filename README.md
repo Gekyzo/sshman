@@ -28,7 +28,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/sshman.git
+git clone https://github.com/Gekyzo/sshman.git
 cd sshman
 
 # Build the project

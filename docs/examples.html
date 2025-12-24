@@ -17,7 +17,7 @@
                 <li><a href="index.html">Home</a></li>
                 <li><a href="usage.html">Usage Guide</a></li>
                 <li><a href="examples.html" class="active">Examples</a></li>
-                <li><a href="https://github.com/yourusername/sshman" target="_blank">GitHub</a></li>
+                <li><a href="https://github.com/Gekyzo/sshman" target="_blank">GitHub</a></li>
             </ul>
         </div>
     </nav>
@@ -44,7 +44,7 @@
 
             <section id="quick-start">
                 <h2>Quick Start Examples</h2>
-                
+
                 <div class="example-scenario">
                     <h3>Generate Your First SSH Key</h3>
                     <p>Create a simple Ed25519 key for general use:</p>
@@ -95,7 +95,7 @@ Key: id_work_ecdsa
 
             <section id="github">
                 <h2>GitHub Setup</h2>
-                
+
                 <div class="example-scenario">
                     <h3>Create a Key for GitHub</h3>
                     <p>Generate an Ed25519 key specifically for GitHub with a descriptive comment:</p>
@@ -146,15 +146,15 @@ cat ~/.ssh/id_github_ed25519.pub | xclip -selection clipboard  # Linux</code></p
 
             <section id="work">
                 <h2>Work Environment Setup</h2>
-                
+
                 <div class="example-scenario">
                     <h3>Secure Work Key with Passphrase</h3>
                     <p>Create a highly secure RSA key for production servers:</p>
                     <div class="terminal">
                         <div class="terminal-body">
                             <pre><code><span class="prompt">$</span> sshman generate --algo rsa --bits 4096 --use work-prod --passphrase --comment "prod-access"
-<span class="output">Enter passphrase (empty for no passphrase): 
-Enter same passphrase again: 
+<span class="output">Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
 ✓ SSH key generated successfully!
   Private key: /home/user/.ssh/id_work-prod_rsa
   Public key:  /home/user/.ssh/id_work-prod_rsa.pub</span></code></pre>
@@ -205,11 +205,11 @@ ssh server3</code></pre>
 
             <section id="multiple-accounts">
                 <h2>Multiple Accounts</h2>
-                
+
                 <div class="example-scenario">
                     <h3>Personal and Work GitHub Accounts</h3>
                     <p>Manage multiple GitHub accounts on the same machine:</p>
-                    
+
                     <div class="step-by-step">
                         <div class="step">
                             <h4>Step 1: Generate keys for each account</h4>
@@ -257,7 +257,7 @@ git remote set-url origin git@github.com-work:company/work-repo.git</code></pre>
 
             <section id="server-deployment">
                 <h2>Server Deployment</h2>
-                
+
                 <div class="example-scenario">
                     <h3>CI/CD Pipeline Key</h3>
                     <p>Create a key for automated deployments (no passphrase for automation):</p>
@@ -311,11 +311,11 @@ Host internal-server
 
             <section id="key-rotation">
                 <h2>Key Rotation</h2>
-                
+
                 <div class="example-scenario">
                     <h3>Rotate an Existing Key</h3>
                     <p>Best practice: Rotate keys every 6-12 months</p>
-                    
+
                     <div class="step-by-step">
                         <div class="step">
                             <h4>Step 1: Check current key info</h4>
@@ -327,7 +327,7 @@ Key Details:
   Size: 256 bits
   Comment: user@hostname
   Created: 2024-01-15
-  
+
 Fingerprints:
   SHA256: SHA256:abc123def456...</span></code></pre>
                         </div>
@@ -367,7 +367,7 @@ ssh user@server.example.com
 
             <section id="team-workflow">
                 <h2>Team Workflow</h2>
-                
+
                 <div class="example-scenario">
                     <h3>Onboarding New Team Member</h3>
                     <div class="step-by-step">
@@ -449,7 +449,7 @@ gpg -c ssh-backup.tar.gz</code></pre>
     <footer>
         <div class="container">
             <p>&copy; 2025 sshman - SSH Key Management CLI</p>
-            <p>Licensed under the <a href="https://github.com/yourusername/sshman/blob/main/LICENSE">MIT License</a></p>
+            <p>Licensed under the <a href="https://github.com/Gekyzo/sshman/blob/main/LICENSE">MIT License</a></p>
         </div>
     </footer>
 </body>

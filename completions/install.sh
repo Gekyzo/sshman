@@ -13,13 +13,14 @@ echo "sshman Tab Completion Installer"
 echo "================================"
 echo ""
 
-# Detect shell
-if [ -n "$BASH_VERSION" ]; then
-    SHELL_TYPE="bash"
-elif [ -n "$ZSH_VERSION" ]; then
+# Detect user's default shell (not the shell running this script)
+USER_SHELL=$(basename "$SHELL")
+if [ "$USER_SHELL" = "zsh" ]; then
     SHELL_TYPE="zsh"
+elif [ "$USER_SHELL" = "bash" ]; then
+    SHELL_TYPE="bash"
 else
-    echo "Unsupported shell. Please use bash or zsh."
+    echo "Unsupported shell: $USER_SHELL. Please use bash or zsh."
     exit 1
 fi
 
@@ -80,9 +81,12 @@ if [ "$SHELL_TYPE" = "bash" ]; then
     
 elif [ "$SHELL_TYPE" = "zsh" ]; then
     echo "Installing zsh completion..."
-    
-    # Determine zsh completion directory
-    if [ -d "/usr/local/share/zsh/site-functions" ] && [ -w "/usr/local/share/zsh/site-functions" ]; then
+
+    # Determine zsh completion directory (check Homebrew locations for macOS)
+    if [ -d "/opt/homebrew/share/zsh/site-functions" ] && [ -w "/opt/homebrew/share/zsh/site-functions" ]; then
+        cp "$ZSH_COMPLETION_FILE" /opt/homebrew/share/zsh/site-functions/_sshman
+        echo "✓ Installed to /opt/homebrew/share/zsh/site-functions/_sshman"
+    elif [ -d "/usr/local/share/zsh/site-functions" ] && [ -w "/usr/local/share/zsh/site-functions" ]; then
         cp "$ZSH_COMPLETION_FILE" /usr/local/share/zsh/site-functions/_sshman
         echo "✓ Installed to /usr/local/share/zsh/site-functions/_sshman"
     else

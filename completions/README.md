@@ -20,6 +20,11 @@ cd completions
 ./install.sh
 ```
 
+The script automatically detects your shell and platform:
+- **macOS**: Supports Homebrew zsh completion directory (`/opt/homebrew/share/zsh/site-functions`)
+- **Linux/Unix**: Uses standard completion directories
+- **Auto-detection**: Uses `$SHELL` environment variable for shell detection
+
 Then restart your shell or source your shell configuration:
 ```bash
 # For bash
@@ -50,7 +55,11 @@ source ~/.zshrc
 
 1. **System-wide installation** (requires sudo):
    ```bash
+   # Standard location
    sudo cp _sshman /usr/local/share/zsh/site-functions/
+
+   # Or for Homebrew on macOS
+   sudo cp _sshman /opt/homebrew/share/zsh/site-functions/
    ```
 
 2. **User installation**:

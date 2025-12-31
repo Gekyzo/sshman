@@ -159,6 +159,11 @@ function _complete_sshman() {
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} info" ];    then _picocli_sshman; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} use" ];    then _picocli_sshman; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} set" ];    then _picocli_sshman; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} init" ];    then _picocli_sshman; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} connect-new" ];    then _picocli_sshman; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} connect" ];    then _picocli_sshman; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} archive" ];    then _picocli_sshman; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} unarchive" ];    then _picocli_sshman; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} help" ];    then _picocli_sshman; return $?; fi
 
   # Find the longest sequence of subcommands and call the bash function for that subcommand.
@@ -167,9 +172,19 @@ function _complete_sshman() {
   local cmds2=(info)
   local cmds3=(use)
   local cmds4=(set)
-  local cmds5=(help)
+  local cmds5=(init)
+  local cmds6=(connect-new)
+  local cmds7=(connect)
+  local cmds8=(archive)
+  local cmds9=(unarchive)
+  local cmds10=(help)
 
-  if CompWordsContainsArray "${cmds5[@]}"; then _picocli_sshman_help; return $?; fi
+  if CompWordsContainsArray "${cmds10[@]}"; then _picocli_sshman_help; return $?; fi
+  if CompWordsContainsArray "${cmds9[@]}"; then _picocli_sshman_unarchive; return $?; fi
+  if CompWordsContainsArray "${cmds8[@]}"; then _picocli_sshman_archive; return $?; fi
+  if CompWordsContainsArray "${cmds7[@]}"; then _picocli_sshman_connect; return $?; fi
+  if CompWordsContainsArray "${cmds6[@]}"; then _picocli_sshman_connectnew; return $?; fi
+  if CompWordsContainsArray "${cmds5[@]}"; then _picocli_sshman_init; return $?; fi
   if CompWordsContainsArray "${cmds4[@]}"; then _picocli_sshman_set; return $?; fi
   if CompWordsContainsArray "${cmds3[@]}"; then _picocli_sshman_use; return $?; fi
   if CompWordsContainsArray "${cmds2[@]}"; then _picocli_sshman_info; return $?; fi
@@ -185,7 +200,7 @@ function _picocli_sshman() {
   # Get completion data
   local curr_word=${COMP_WORDS[COMP_CWORD]}
 
-  local commands="generate list info use set help"
+  local commands="generate list info use set init connect-new connect archive unarchive help"
   local flag_opts="-h --help -V --version"
   local arg_opts=""
 
@@ -317,7 +332,7 @@ function _picocli_sshman_use() {
       return
       ;;
   esac
-  local keyName_pos_param_args=("CiroExcelia" "CiroPersonal") # 0-0 values
+  local keyName_pos_param_args=("CiroPersonal" "archived/CiroExcelia") # 0-0 values
 
   if [[ "${curr_word}" == -* ]]; then
     COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
@@ -353,7 +368,7 @@ function _picocli_sshman_set() {
       return
       ;;
   esac
-  local keyName_pos_param_args=("CiroExcelia" "CiroPersonal") # 0-0 values
+  local keyName_pos_param_args=("CiroPersonal" "archived/CiroExcelia") # 0-0 values
 
   if [[ "${curr_word}" == -* ]]; then
     COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
@@ -369,12 +384,199 @@ function _picocli_sshman_set() {
   fi
 }
 
+# Generates completions for the options and subcommands of the `init` subcommand.
+function _picocli_sshman_init() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="-f --force -h --help -V --version"
+  local arg_opts="--path"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    --path)
+      return
+      ;;
+  esac
+  local keyName_pos_param_args=("CiroPersonal" "archived/CiroExcelia") # 0-0 values
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local currIndex
+    currIndex=$(currentPositionalIndex "init" "${arg_opts}" "${flag_opts}")
+    if (( currIndex >= 0 && currIndex <= 0 )); then
+      positionals=$( compReplyArray "${keyName_pos_param_args[@]}" )
+    fi
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `connect-new` subcommand.
+function _picocli_sshman_connectnew() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+
+  local commands=""
+  local flag_opts="-h --help -V --version"
+  local arg_opts=""
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `connect` subcommand.
+function _picocli_sshman_connect() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+
+  local commands=""
+  local flag_opts="-h --help -V --version"
+  local arg_opts=""
+  local alias_pos_param_args=("") # 0-0 values
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local currIndex
+    currIndex=$(currentPositionalIndex "connect" "${arg_opts}" "${flag_opts}")
+    if (( currIndex >= 0 && currIndex <= 0 )); then
+      positionals=$( compReplyArray "${alias_pos_param_args[@]}" )
+    fi
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Helper function to dynamically list active SSH keys (non-archived)
+function _sshman_list_active_keys() {
+  local ssh_dir="${HOME}/.ssh"
+  local keys=()
+
+  if [[ -d "$ssh_dir" ]]; then
+    while IFS= read -r -d '' file; do
+      # Skip .pub files and archived directory
+      if [[ ! "$file" =~ \.pub$ ]] && [[ ! "$file" =~ /archived/ ]]; then
+        # Check if it's a private key (starts with "-----BEGIN")
+        if head -c 10 "$file" 2>/dev/null | grep -q "^-----BEGIN"; then
+          local key_name="${file#$ssh_dir/}"
+          keys+=("$key_name")
+        fi
+      fi
+    done < <(find "$ssh_dir" -type f -not -path "*/archived/*" -print0 2>/dev/null)
+  fi
+
+  printf '%s\n' "${keys[@]}"
+}
+
+# Helper function to dynamically list archived SSH keys
+function _sshman_list_archived_keys() {
+  local archive_dir="${HOME}/.ssh/archived"
+  local keys=()
+
+  if [[ -d "$archive_dir" ]]; then
+    while IFS= read -r -d '' file; do
+      # Skip .pub files
+      if [[ ! "$file" =~ \.pub$ ]]; then
+        # Check if it's a private key (starts with "-----BEGIN")
+        if head -c 10 "$file" 2>/dev/null | grep -q "^-----BEGIN"; then
+          local key_name="${file#$archive_dir/}"
+          keys+=("$key_name")
+        fi
+      fi
+    done < <(find "$archive_dir" -type f -print0 2>/dev/null)
+  fi
+
+  printf '%s\n' "${keys[@]}"
+}
+
+# Generates completions for the options and subcommands of the `archive` subcommand.
+function _picocli_sshman_archive() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="-f --force -h --help -V --version"
+  local arg_opts="--path"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    --path)
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local currIndex
+    currIndex=$(currentPositionalIndex "archive" "${arg_opts}" "${flag_opts}")
+    if (( currIndex >= 0 && currIndex <= 0 )); then
+      # Dynamically get active keys
+      local IFS=$'\n'
+      local active_keys=($(_sshman_list_active_keys))
+      positionals=$( compReplyArray "${active_keys[@]}" )
+    fi
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `unarchive` subcommand.
+function _picocli_sshman_unarchive() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="-f --force -h --help -V --version"
+  local arg_opts="--path"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    --path)
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local currIndex
+    currIndex=$(currentPositionalIndex "unarchive" "${arg_opts}" "${flag_opts}")
+    if (( currIndex >= 0 && currIndex <= 0 )); then
+      # Dynamically get archived keys
+      local IFS=$'\n'
+      local archived_keys=($(_sshman_list_archived_keys))
+      positionals=$( compReplyArray "${archived_keys[@]}" )
+    fi
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
 # Generates completions for the options and subcommands of the `help` subcommand.
 function _picocli_sshman_help() {
   # Get completion data
   local curr_word=${COMP_WORDS[COMP_CWORD]}
 
-  local commands="generate list info use"
+  local commands="generate list info use init connect-new connect archive unarchive"
   local flag_opts="-h --help"
   local arg_opts=""
 
@@ -394,4 +596,4 @@ function _picocli_sshman_help() {
 # current word on the command line.
 # The `-o default` option means that if the function generated no matches, the
 # default Bash completions and the Readline default filename completions are performed.
-complete -F _complete_sshman -o default sshman sshman.sh sshman.bash ./sshman
+complete -F _complete_sshman -o default sshman sshman.sh sshman.bash

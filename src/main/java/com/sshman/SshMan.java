@@ -2,15 +2,19 @@ package com.sshman;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.IVersionProvider;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 
 @Command(
     name = "sshman",
     mixinStandardHelpOptions = true,
-    version = "sshman ${project.version}",  // Populated at build time
+    versionProvider = SshMan.VersionProvider.class,
     description = "SSH Centralized CLI - Manage SSH keys and connections",
     subcommands = {
         GenerateCommand.class,  // Actual subcommand classes
@@ -20,6 +24,8 @@ import java.util.concurrent.Callable;
         InitCommand.class,
         ConnectNewCommand.class,
         ConnectCommand.class,
+        ArchiveCommand.class,
+        UnarchiveCommand.class,
         CommandLine.HelpCommand.class
     },
     footer = "%nExamples:%n" +
@@ -60,6 +66,22 @@ public class SshMan implements Callable<Integer> {
             return cmd.getExitCodeExceptionMapper() != null
                 ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
                 : cmd.getCommandSpec().exitCodeOnExecutionException();
+        }
+    }
+
+    // Version provider that reads from version.properties
+    static class VersionProvider implements IVersionProvider {
+        @Override
+        public String[] getVersion() throws Exception {
+            Properties props = new Properties();
+            try (InputStream is = getClass().getClassLoader().getResourceAsStream("version.properties")) {
+                if (is == null) {
+                    return new String[]{"sshman (version unknown)"};
+                }
+                props.load(is);
+                String version = props.getProperty("version", "unknown");
+                return new String[]{"sshman " + version};
+            }
         }
     }
 }

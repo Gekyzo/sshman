@@ -26,6 +26,7 @@ import java.util.concurrent.Callable;
         ConnectCommand.class,
         ArchiveCommand.class,
         UnarchiveCommand.class,
+        RotateCommand.class,
         CommandLine.HelpCommand.class
     },
     footer = "%nExamples:%n" +

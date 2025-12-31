@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- SSH key rotation with `rotate` command
+  - Automatic key type and comment detection from existing keys
+  - Option to change key type during rotation with `--type` flag
+  - Custom comment support with `--comment` flag
+  - Batch rotation support for multiple keys at once
+  - Dry-run mode to preview changes with `--dry-run` flag
+  - Automatic SSH config file backup to `~/.ssh/archived/config_backups/` with timestamps
+  - Config backup history preservation
+  - Automatic updates to all SSH config host entries using the rotated key
+  - Automatic updates to all connection profiles in `~/.sshman/profiles.json`
+  - Connection testing before and after rotation (with `--no-test` to skip)
+  - Public key upload to remote servers with `--upload` flag using ssh-copy-id
+  - Comprehensive markdown logging to `~/.ssh/rotation.log`
+  - Tab completion support for key selection
+  - Rotation summary showing success/failure counts
+  - Preserves directory structure when archiving old keys
+  - Proper permissions handling (600 for private keys, 644 for public keys)
+
 ## [0.1.1] - 2025-12-24
 
 ### Added

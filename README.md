@@ -537,6 +537,127 @@ Fingerprints:
 ═══════════════════════════════════════════════════════════════
 ```
 
+### Rotate SSH Keys
+
+Rotate SSH keys by archiving the old key, generating a new one, and automatically updating all references in SSH config and connection profiles.
+
+```bash
+# Rotate a single key (preserves key type and comment)
+sshman rotate my-key
+
+# Rotate with a new key type
+sshman rotate old-rsa-key --type ed25519
+
+# Rotate with custom comment
+sshman rotate my-key --comment "New rotated key"
+
+# Rotate multiple keys at once
+sshman rotate key1 key2 key3
+
+# Preview changes without executing (dry run)
+sshman rotate my-key --dry-run
+
+# Skip confirmation prompts
+sshman rotate my-key --force
+
+# Upload new public key to remote servers
+sshman rotate my-key --upload user@server1.com,user@server2.com
+
+# Skip connection testing
+sshman rotate my-key --no-test
+
+# Skip SSH config backup
+sshman rotate my-key --no-backup
+```
+
+**What the rotate command does:**
+
+1. **Detects** the original key type and comment from the existing key
+2. **Backs up** the SSH config file to `~/.ssh/archived/config_backups/` with timestamp
+3. **Tests** the connection with the old key (unless `--no-test` is used)
+4. **Generates** a new SSH key with the same or specified type
+5. **Tests** the connection with the new key before proceeding
+6. **Archives** the old key to `~/.ssh/archived/` (preserving directory structure)
+7. **Installs** the new key at the original location
+8. **Updates** all SSH config host entries that used the old key
+9. **Updates** all connection profiles in `~/.sshman/profiles.json` that used the old key
+10. **Uploads** the new public key to specified remote servers (if `--upload` is used)
+11. **Logs** all operations to `~/.ssh/rotation.log` in markdown format
+
+**Options:**
+
+- `--type, -t <type>` - Change key type during rotation (ed25519, rsa, ecdsa). Default: preserve original
+- `--comment, -c <comment>` - Set comment for new key. Default: preserve original comment
+- `--dry-run` - Preview all changes without executing them
+- `--force, -f` - Skip all confirmation prompts
+- `--upload, -u <targets>` - Upload new public key using ssh-copy-id (comma-separated list)
+- `--no-test` - Skip connection testing before archiving old key
+- `--no-backup` - Skip backing up SSH config file
+- `--path <path>` - Custom SSH directory path
+
+**Example workflow:**
+
+```bash
+# Check what will happen
+sshman rotate work-key --dry-run
+
+# Perform the rotation
+sshman rotate work-key
+
+# Output:
+# ========================================
+# Rotating key: work-key
+# ========================================
+#
+# Original key type: rsa
+# New key type: rsa
+# Comment: user@hostname (work-key)
+#
+# Hosts using this key in SSH config:
+#   - production-server
+#   - staging-server
+#
+# Connection profiles using this key:
+#   - prod-deploy
+#
+# ✓ Backed up SSH config to: archived/config_backups/config_20250131_143022
+# ✓ Generated new rsa key
+# ✓ Archived old key
+# ✓ New key installed at: /home/user/.ssh/work-key
+# ✓ Updated 2 host(s) in SSH config
+# ✓ Updated 1 connection profile(s)
+#
+# ✓ Key rotation completed successfully: work-key
+#
+# ========================================
+# Rotation Summary
+# ========================================
+# Total keys processed: 1
+# Successful: 1
+# Failed: 0
+#
+# ✓ Rotation log updated: rotation.log
+```
+
+**Rotation log file** (`~/.ssh/rotation.log`):
+
+The rotation command maintains a detailed log file in markdown format:
+
+```markdown
+# SSH Key Rotation Log
+
+This file contains a history of all SSH key rotations performed by sshman.
+
+## Rotation Session - 2025-01-31 14:30:22
+
+- **[2025-01-31 14:30:22]** BACKUP - SSH config backed up: config_20250131_143022
+- **[2025-01-31 14:30:23]** GENERATED - New rsa key for: work-key
+- **[2025-01-31 14:30:23]** ARCHIVED - Old key: work-key
+- **[2025-01-31 14:30:23]** UPDATED-CONFIG - Updated 2 host(s) for: work-key
+- **[2025-01-31 14:30:23]** UPDATED-PROFILES - Updated 1 profile(s) for: work-key
+- **[2025-01-31 14:30:23]** SUCCESS - Completed rotation: work-key
+```
+
 ## 🎯 Common Use Cases
 
 ### Setting Up a New GitHub Key

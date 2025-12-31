@@ -164,6 +164,7 @@ function _complete_sshman() {
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} connect" ];    then _picocli_sshman; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} archive" ];    then _picocli_sshman; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} unarchive" ];    then _picocli_sshman; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} rotate" ];    then _picocli_sshman; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} help" ];    then _picocli_sshman; return $?; fi
 
   # Find the longest sequence of subcommands and call the bash function for that subcommand.
@@ -177,9 +178,11 @@ function _complete_sshman() {
   local cmds7=(connect)
   local cmds8=(archive)
   local cmds9=(unarchive)
-  local cmds10=(help)
+  local cmds10=(rotate)
+  local cmds11=(help)
 
-  if CompWordsContainsArray "${cmds10[@]}"; then _picocli_sshman_help; return $?; fi
+  if CompWordsContainsArray "${cmds11[@]}"; then _picocli_sshman_help; return $?; fi
+  if CompWordsContainsArray "${cmds10[@]}"; then _picocli_sshman_rotate; return $?; fi
   if CompWordsContainsArray "${cmds9[@]}"; then _picocli_sshman_unarchive; return $?; fi
   if CompWordsContainsArray "${cmds8[@]}"; then _picocli_sshman_archive; return $?; fi
   if CompWordsContainsArray "${cmds7[@]}"; then _picocli_sshman_connect; return $?; fi
@@ -200,7 +203,7 @@ function _picocli_sshman() {
   # Get completion data
   local curr_word=${COMP_WORDS[COMP_CWORD]}
 
-  local commands="generate list info use set init connect-new connect archive unarchive help"
+  local commands="generate list info use set init connect-new connect archive unarchive rotate help"
   local flag_opts="-h --help -V --version"
   local arg_opts=""
 
@@ -571,12 +574,60 @@ function _picocli_sshman_unarchive() {
   fi
 }
 
+# Generates completions for the options and subcommands of the `rotate` subcommand.
+function _picocli_sshman_rotate() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="-f --force --dry-run --no-test --no-backup -h --help -V --version"
+  local arg_opts="--path --type -t --comment -c --upload -u"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    --path)
+      return
+      ;;
+    --type|-t)
+      local type_args=("ed25519" "rsa" "ecdsa")
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${type_args[@]}" ) )
+      return $?
+      ;;
+    --comment|-c)
+      return
+      ;;
+    --upload|-u)
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local currIndex
+    currIndex=$(currentPositionalIndex "rotate" "${arg_opts}" "${flag_opts}")
+    # Support multiple keys (variadic positional params)
+    if (( currIndex >= 0 )); then
+      # Dynamically get active keys
+      local IFS=$'\n'
+      local active_keys=($(_sshman_list_active_keys))
+      positionals=$( compReplyArray "${active_keys[@]}" )
+    fi
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
 # Generates completions for the options and subcommands of the `help` subcommand.
 function _picocli_sshman_help() {
   # Get completion data
   local curr_word=${COMP_WORDS[COMP_CWORD]}
 
-  local commands="generate list info use init connect-new connect archive unarchive"
+  local commands="generate list info use init connect-new connect archive unarchive rotate"
   local flag_opts="-h --help"
   local arg_opts=""
 

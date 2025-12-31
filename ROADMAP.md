@@ -42,9 +42,10 @@ This document outlines the planned features and improvements for sshman.
 ### Key Operations
 - [ ] Rename SSH keys
 - [ ] Move keys between folders
-- [ ] Copy keys to remote servers
+- [ ] Copy keys to remote servers (ssh-copy-id wrapper)
 - [ ] Remove/delete keys safely
 - [ ] Batch operations on multiple keys
+- [ ] Deploy public key to remote server's authorized_keys
 
 ## Version 0.4.0 - Developer Experience
 
@@ -69,17 +70,22 @@ This document outlines the planned features and improvements for sshman.
 - [ ] Custom default settings (algorithm, key size, etc.)
 - [ ] Color scheme customization
 - [ ] Localization support
+- [ ] Interactive TUI with fuzzy search for profiles and keys
+- [ ] Quick connect with partial name matching
 
 ## Version 0.5.0 - Security & Compliance
 
 **Target:** Q3 2025
 
 ### Security Features
-- [ ] Hardware security key (YubiKey) integration
+- [ ] Hardware security key (YubiKey/FIDO2/U2F) integration
+- [ ] Support for sk-ssh-ed25519@openssh.com key types
 - [ ] SSH certificate support
 - [ ] Key signing and verification
 - [ ] Security policy enforcement
 - [ ] Compliance reporting
+- [ ] Time-limited ssh-agent sessions (TTL support)
+- [ ] Automatic key removal from memory after timeout
 
 ### Auditing
 - [ ] Comprehensive audit logging
@@ -117,14 +123,21 @@ This document outlines the planned features and improvements for sshman.
 
 ### Advanced Features
 - [ ] SSH tunnel management
+- [ ] Port forwarding wizard (simplified -L/-R interface)
 - [ ] Port forwarding profiles
-- [ ] Bastion/jump host support
+- [ ] Bastion/jump host support (ProxyJump configuration)
 - [ ] Multi-hop SSH connections
 - [ ] SSH session recording
+- [ ] SCP/SFTP wrapper using connection profiles
+- [ ] Known hosts cleaner utility (fix offending key errors)
+- [ ] Connection doctor (verbose diagnostics and error analysis)
+- [ ] Dry-run mode for all commands (show command without executing)
 
 ### Integration
 - [ ] Git provider integration (GitHub, GitLab, Bitbucket)
+- [ ] API integration to upload public keys to Git providers
 - [ ] Cloud provider CLI integration (AWS, GCP, Azure)
+- [ ] Cloud inventory import (auto-generate profiles from EC2/GCP/DO instances)
 - [ ] Container orchestration tools (Kubernetes, Docker)
 - [ ] Infrastructure as Code tools (Terraform, Ansible)
 

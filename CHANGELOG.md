@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-01-01
+
 ### Added
 - SSH key rotation with `rotate` command
   - Automatic key type and comment detection from existing keys
@@ -54,6 +56,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Custom SSH directory support with `--path` flag
   - Tab completion for archived key selection
   - Lists available archived keys when specified key is not found
+- Native GraalVM build support
+  - Build native executables with `./build-native.sh` or `mvn -Pnative package`
+  - Native binaries for Linux, macOS, and Windows
+  - No Java runtime required for native binaries
+  - ~10-50ms startup time vs ~500-1000ms for JAR
+  - ~10-30 MB memory usage vs ~100-200 MB for JAR
+  - Comprehensive native build documentation in NATIVE_BUILD.md
+  - GraalVM native-image configuration for reflection and resources
+- Structured logging with SLF4J and Logback
+  - Persistent logging to `~/.ssh/sshman.log`
+  - Automatic log file creation and management
+  - Timestamped log entries for audit trail
+  - Log levels (INFO, WARN, ERROR) for different operations
+
+### Improved
+- Display equivalent SSH command for all operations
+- Enhanced error messages with actionable suggestions
+- Better user feedback during key operations
 
 ## [0.1.1] - 2025-12-24
 
@@ -126,6 +146,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI framework using picocli
 - Project structure and build configuration
 
+[0.2.0]: https://github.com/Gekyzo/sshman/releases/tag/v0.2.0
 [0.1.1]: https://github.com/Gekyzo/sshman/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Gekyzo/sshman/releases/tag/v0.1.0
 [0.0.1]: https://github.com/Gekyzo/sshman/releases/tag/v0.0.1

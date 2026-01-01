@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  build-jar:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,6 +37,90 @@ jobs:
           echo "path=$JAR_FILE" >> $GITHUB_OUTPUT
           echo "name=$(basename $JAR_FILE)" >> $GITHUB_OUTPUT
 
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jar-package
+          path: ${{ steps.jar_file.outputs.path }}
+
+  build-native:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-amd64
+          - os: macos-latest
+            platform: macos-amd64
+          - os: windows-latest
+            platform: windows-amd64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build native image
+        run: mvn -Pnative clean package -DskipTests
+
+      - name: Package native binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          cp target/sshman dist/
+          cd dist
+          tar -czf sshman-${{ matrix.platform }}.tar.gz sshman
+          cd ..
+
+      - name: Package native binary (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir dist
+          copy target\sshman.exe dist\
+          cd dist
+          7z a sshman-${{ matrix.platform }}.zip sshman.exe
+          cd ..
+
+      - name: Upload native binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.platform }}
+          path: dist/sshman-${{ matrix.platform }}.*
+
+  release:
+    needs: [build-jar, build-native]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display artifact structure
+        run: ls -R artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          cp artifacts/jar-package/*.jar release/
+          find artifacts/native-* -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release/ \;
+
       - name: Generate release notes
         id: release_notes
         run: |
@@ -47,20 +131,38 @@ jobs:
 
           ### Installation
 
-          Download `sshman-${{ steps.get_version.outputs.VERSION }}-jar-with-dependencies.jar` and run:
+          #### Native Binaries (No Java Required)
+
+          Download the native binary for your platform:
+
+          - **Linux**: `sshman-linux-amd64.tar.gz`
+          - **macOS**: `sshman-macos-amd64.tar.gz`
+          - **Windows**: `sshman-windows-amd64.zip`
+
+          Extract and run:
 
           ```bash
-          # Make it executable (Unix/Linux/macOS)
-          chmod +x sshman
+          # Linux/macOS
+          tar -xzf sshman-linux-amd64.tar.gz
+          ./sshman --help
 
-          # Or run with java
+          # Install system-wide (Linux/macOS)
+          sudo mv sshman /usr/local/bin/
+          sudo chmod +x /usr/local/bin/sshman
+          ```
+
+          #### JAR (Requires Java 21+)
+
+          Download `sshman-${{ steps.get_version.outputs.VERSION }}-jar-with-dependencies.jar`:
+
+          ```bash
           java -jar sshman-${{ steps.get_version.outputs.VERSION }}-jar-with-dependencies.jar --help
           ```
 
           ### Requirements
 
-          - Java 21 or higher
-          - ssh-keygen (pre-installed on most systems)
+          - **Native binaries**: No dependencies
+          - **JAR**: Java 21 or higher + ssh-keygen
 
           ### What's New
 
@@ -70,7 +172,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.jar_file.outputs.path }}
+          files: release/*
           body_path: release_notes.md
           draft: false
           prerelease: false

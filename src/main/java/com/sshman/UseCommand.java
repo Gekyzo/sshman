@@ -133,16 +133,41 @@ public class UseCommand implements Callable<Integer> {
     }
 
     private int generateAgentCommands(Path keyPath, PrintWriter out, PrintWriter err) {
+        // Check if ssh-agent is already running
+        String sshAuthSock = System.getenv("SSH_AUTH_SOCK");
+        String sshAgentPid = System.getenv("SSH_AGENT_PID");
+
+        // Build the equivalent command
+        String equivalentCommand;
+        if (sshAuthSock != null && !sshAuthSock.isEmpty() &&
+            sshAgentPid != null && !sshAgentPid.isEmpty()) {
+            // Clear existing keys and add the new one
+            equivalentCommand = "ssh-add -D && ssh-add";
+            if (lifetime != null) {
+                equivalentCommand += " -t " + lifetime;
+            }
+            equivalentCommand += " " + keyPath;
+        } else {
+            // Need to start ssh-agent
+            equivalentCommand = "eval \"$(ssh-agent -s)\" && ssh-add";
+            if (lifetime != null) {
+                equivalentCommand += " -t " + lifetime;
+            }
+            equivalentCommand += " " + keyPath;
+        }
+
+        // Print equivalent SSH command
+        out.println("Equivalent SSH command: " + equivalentCommand);
+        if (!quiet) {
+            out.println();
+        }
+
         if (!quiet) {
             out.println("# Starting ssh-agent and adding key: " + keyPath);
             out.println("# Copy and paste the following command, or run:");
             out.println("# eval \"$(sshman use " + keyName + " --quiet)\"");
             out.println();
         }
-
-        // Check if ssh-agent is already running
-        String sshAuthSock = System.getenv("SSH_AUTH_SOCK");
-        String sshAgentPid = System.getenv("SSH_AGENT_PID");
 
         if (sshAuthSock != null && !sshAuthSock.isEmpty() &&
             sshAgentPid != null && !sshAgentPid.isEmpty()) {
@@ -151,25 +176,13 @@ public class UseCommand implements Callable<Integer> {
                 out.println("# Clearing existing keys and adding new key...");
                 out.println();
             }
-            // Clear existing keys and add the new one
-            out.print("ssh-add -D && ssh-add");
-            if (lifetime != null) {
-                out.print(" -t " + lifetime);
-            }
-            out.println(" " + keyPath);
+            out.println(equivalentCommand);
         } else {
-            // Need to start ssh-agent
             if (!quiet) {
                 out.println("# No ssh-agent running, starting a new one...");
                 out.println();
             }
-            
-            // Generate the eval command
-            out.print("eval \"$(ssh-agent -s)\" && ssh-add");
-            if (lifetime != null) {
-                out.print(" -t " + lifetime);
-            }
-            out.println(" " + keyPath);
+            out.println(equivalentCommand);
         }
 
         return 0;

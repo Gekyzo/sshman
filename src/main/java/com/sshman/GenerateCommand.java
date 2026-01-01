@@ -4,6 +4,8 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,6 +23,8 @@ import java.util.concurrent.Callable;
     mixinStandardHelpOptions = true
 )
 public class GenerateCommand implements Callable<Integer> {
+
+    private static final Logger logger = LoggerFactory.getLogger(GenerateCommand.class);
 
     @Spec
     private CommandSpec spec;
@@ -83,6 +87,7 @@ public class GenerateCommand implements Callable<Integer> {
         if (name == null || name.isBlank()) {
             if (use == null || use.isBlank()) {
                 err.println("Either --name or --use must be specified");
+                logger.error("Missing required parameter: --name or --use");
                 return 1;
             }
             name = generateKeyName();
@@ -96,6 +101,7 @@ public class GenerateCommand implements Callable<Integer> {
 
         // Validate
         if (!validateInputs(sshDir, keyPath)) {
+            logger.error("Invalid input parameters for key: {}", name);
             return 1;
         }
 
@@ -104,18 +110,31 @@ public class GenerateCommand implements Callable<Integer> {
             if (!force) {
                 err.printf("Key already exists: %s%n", keyPath);
                 err.println("Use --force to overwrite");
+                logger.error("Key already exists (use --force to overwrite): {}", name);
                 return 1;
             }
             out.println("Overwriting existing key...");
+            logger.warn("Overwriting existing key: {}", name);
         }
 
         // Ensure target directory exists
         if (!ensureDirectory(targetDir)) {
+            logger.error("Failed to create directory: {}", targetDir);
             return 1;
         }
 
+        logger.info("Generating {} key: {}", algorithm.value, name);
+
         // Generate key
-        return generateKey(keyPath);
+        int result = generateKey(keyPath);
+
+        if (result == 0) {
+            logger.info("Generated {} key: {}", algorithm.value, keyPath);
+        } else {
+            logger.error("Failed to generate key: {}", name);
+        }
+
+        return result;
     }
 
     private Path getSshDirectory() {
@@ -218,6 +237,10 @@ public class GenerateCommand implements Callable<Integer> {
         PrintWriter err = spec.commandLine().getErr();
 
         List<String> command = buildCommand(keyPath);
+
+        // Display equivalent SSH command
+        out.println("Equivalent SSH command: " + formatCommand(command));
+        out.println();
 
         out.printf("Generating %s key: %s%n", algorithm.value.toUpperCase(), keyPath);
         out.println();
@@ -331,5 +354,30 @@ public class GenerateCommand implements Callable<Integer> {
         } catch (IOException e) {
             // Ignore if we can't read the public key
         }
+    }
+
+    /**
+     * Format a command list for display, escaping arguments with spaces or special characters.
+     */
+    private String formatCommand(List<String> command) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < command.size(); i++) {
+            String arg = command.get(i);
+
+            // Hide passphrase values
+            if (i > 0 && "-N".equals(command.get(i - 1))) {
+                sb.append("\"***\"");
+            } else if (arg.contains(" ") || arg.contains("\"") || arg.contains("'")) {
+                // Quote arguments with spaces or quotes
+                sb.append("\"").append(arg.replace("\"", "\\\"")).append("\"");
+            } else {
+                sb.append(arg);
+            }
+
+            if (i < command.size() - 1) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
     }
 }

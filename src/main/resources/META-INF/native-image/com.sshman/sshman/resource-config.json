@@ -1,0 +1,13 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "version\\.properties"
+      },
+      {
+        "pattern": "logback\\.xml"
+      }
+    ]
+  },
+  "bundles": []
+}

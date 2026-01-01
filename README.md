@@ -73,6 +73,30 @@ Alternatively, add the project directory to your `PATH`:
 export PATH="$PATH:/path/to/sshman"
 ```
 
+### Native Build (No Java Required)
+
+For a standalone executable without Java runtime dependency:
+
+```bash
+# Install GraalVM and build native image
+./build-native.sh
+
+# The native executable will be at:
+# target/sshman
+
+# Install system-wide
+sudo cp target/sshman /usr/local/bin/
+sudo chmod +x /usr/local/bin/sshman
+```
+
+See [NATIVE_BUILD.md](NATIVE_BUILD.md) for detailed instructions on building native executables.
+
+**Benefits:**
+- No Java installation required
+- Faster startup (~10-50ms vs ~500-1000ms)
+- Lower memory usage (~10-30 MB vs ~100-200 MB)
+- Single executable binary
+
 ### Shell Tab Completion and Auto-Switching (Recommended)
 
 Enable tab completion and auto-directory SSH key switching:

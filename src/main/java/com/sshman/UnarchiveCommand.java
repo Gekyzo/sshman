@@ -5,6 +5,8 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +28,8 @@ import java.util.stream.Stream;
         "  sshman unarchive work/id_work_ed25519%n"
 )
 public class UnarchiveCommand implements Callable<Integer> {
+
+    private static final Logger logger = LoggerFactory.getLogger(UnarchiveCommand.class);
 
     @Spec
     private CommandSpec spec;
@@ -51,6 +55,9 @@ public class UnarchiveCommand implements Callable<Integer> {
         PrintWriter out = spec.commandLine().getOut();
         PrintWriter err = spec.commandLine().getErr();
 
+        out.println("Equivalent SSH command: none");
+        out.println();
+
         Path sshDir = getSshDirectory();
         Path archiveDir = sshDir.resolve("archived");
 
@@ -61,6 +68,7 @@ public class UnarchiveCommand implements Callable<Integer> {
         if (!Files.exists(archiveDir)) {
             err.println("Archive directory does not exist: " + archiveDir);
             err.println("No keys have been archived yet.");
+            logger.error("Archive directory does not exist");
             return 1;
         }
 
@@ -77,6 +85,7 @@ public class UnarchiveCommand implements Callable<Integer> {
                 err.println();
                 err.println("Available archived keys:");
                 listAvailableArchivedKeys(archiveDir, err);
+                logger.error("Archived key not found: {}", keyName);
                 return 1;
             }
         }
@@ -84,6 +93,7 @@ public class UnarchiveCommand implements Callable<Integer> {
         // Verify it's a private key
         if (!isPrivateKey(archivedKeyPath)) {
             err.println("Not a valid private key: " + archivedKeyPath);
+            logger.error("Not a valid private key: {}", keyName);
             return 1;
         }
 
@@ -95,8 +105,15 @@ public class UnarchiveCommand implements Callable<Integer> {
         if (Files.exists(targetKeyPath) && !force) {
             err.println("Key already exists at target location: " + keyName);
             err.println("Use --force to overwrite the existing key.");
+            logger.error("Key already exists (use --force to overwrite): {}", keyName);
             return 1;
         }
+
+        if (Files.exists(targetKeyPath)) {
+            logger.warn("Overwriting existing key: {}", keyName);
+        }
+
+        logger.info("Unarchiving key: {}", keyName);
 
         // Unarchive the key and its public key if it exists
         return unarchiveKey(archivedKeyPath, targetKeyPath, out, err);
@@ -180,10 +197,13 @@ public class UnarchiveCommand implements Callable<Integer> {
 
             out.println();
             out.println("Key successfully restored to: " + relativeKeyPath);
+
+            logger.info("Unarchived key to: {}", relativeKeyPath);
             return 0;
 
         } catch (IOException e) {
             err.println("Failed to unarchive key: " + e.getMessage());
+            logger.error("Failed to unarchive key: {}", e.getMessage());
             return 1;
         }
     }

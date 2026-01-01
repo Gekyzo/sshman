@@ -49,8 +49,9 @@ public class ConnectCommand implements Callable<Integer> {
         Profile profile = profileOpt.get();
         String sshCommand = profile.toSshCommand();
 
+        out.println("Equivalent SSH command: " + sshCommand);
+        out.println();
         out.println("Connecting to " + profile.getAlias() + "...");
-        out.println("Command: " + sshCommand);
         out.println();
 
         try {

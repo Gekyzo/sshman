@@ -14,17 +14,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Custom comment support with `--comment` flag
   - Batch rotation support for multiple keys at once
   - Dry-run mode to preview changes with `--dry-run` flag
+  - Interactive confirmation prompts for safety (with `--force` to skip)
+  - Force mode with `--force` flag to skip all confirmation prompts
   - Automatic SSH config file backup to `~/.ssh/archived/config_backups/` with timestamps
   - Config backup history preservation
+  - Option to skip config backup with `--no-backup` flag
   - Automatic updates to all SSH config host entries using the rotated key
   - Automatic updates to all connection profiles in `~/.sshman/profiles.json`
   - Connection testing before and after rotation (with `--no-test` to skip)
   - Public key upload to remote servers with `--upload` flag using ssh-copy-id
+  - Support for multiple upload targets (comma-separated)
   - Comprehensive markdown logging to `~/.ssh/rotation.log`
+  - Custom SSH directory support with `--path` flag
   - Tab completion support for key selection
   - Rotation summary showing success/failure counts
   - Preserves directory structure when archiving old keys
   - Proper permissions handling (600 for private keys, 644 for public keys)
+- SSH key archiving with `archive` command
+  - Move inactive SSH keys to `~/.ssh/archived/` directory
+  - Preserves directory structure when archiving keys
+  - Archives both private and public key files
+  - Detects if key is referenced in `~/.ssh/config` and warns affected hosts
+  - Interactive confirmation prompt when archiving keys in use
+  - Force mode with `--force` flag to skip confirmation
+  - Automatic cleanup of empty directories after archiving
+  - Recursive key search for keys in subdirectories
+  - Custom SSH directory support with `--path` flag
+  - Tab completion for active key selection
+  - Lists available keys when specified key is not found
+- SSH key unarchiving with `unarchive` command
+  - Restore archived keys from `~/.ssh/archived/` back to active use
+  - Restores both private and public key files
+  - Preserves original directory structure when restoring
+  - Detects and prevents overwriting existing keys (unless `--force` is used)
+  - Force mode with `--force` flag to overwrite existing keys
+  - Creates parent directories if needed during restoration
+  - Automatic cleanup of empty directories in archive after restoration
+  - Recursive search for archived keys in subdirectories
+  - Custom SSH directory support with `--path` flag
+  - Tab completion for archived key selection
+  - Lists available archived keys when specified key is not found
 
 ## [0.1.1] - 2025-12-24
 

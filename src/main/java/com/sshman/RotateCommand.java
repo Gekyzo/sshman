@@ -634,6 +634,9 @@ public class RotateCommand implements Callable<Integer> {
             command.add("256");
         }
 
+        // Display equivalent SSH command
+        out.println("Equivalent SSH command: " + formatCommand(command));
+
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
@@ -809,6 +812,9 @@ public class RotateCommand implements Callable<Integer> {
                 command.add(pubKeyPath.toString());
                 command.add(target);
 
+                // Display equivalent SSH command
+                out.println("Equivalent SSH command: " + formatCommand(command));
+
                 ProcessBuilder pb = new ProcessBuilder(command);
                 pb.inheritIO();
                 Process process = pb.start();
@@ -937,5 +943,30 @@ public class RotateCommand implements Callable<Integer> {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    /**
+     * Format a command list for display, escaping arguments with spaces or special characters.
+     */
+    private String formatCommand(List<String> command) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < command.size(); i++) {
+            String arg = command.get(i);
+
+            // Hide passphrase values
+            if (i > 0 && "-N".equals(command.get(i - 1))) {
+                sb.append("\"***\"");
+            } else if (arg.contains(" ") || arg.contains("\"") || arg.contains("'")) {
+                // Quote arguments with spaces or quotes
+                sb.append("\"").append(arg.replace("\"", "\\\"")).append("\"");
+            } else {
+                sb.append(arg);
+            }
+
+            if (i < command.size() - 1) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
     }
 }

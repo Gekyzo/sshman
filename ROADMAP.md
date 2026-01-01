@@ -4,7 +4,7 @@ This document outlines the planned features and improvements for sshman.
 
 ## Version 0.2.0 - Enhanced Connection Management
 
-**Target:** Q1 2025
+**Target:** Q1 2026
 
 ### Connection Management
 - [ ] Edit existing connection profiles
@@ -24,11 +24,10 @@ This document outlines the planned features and improvements for sshman.
 
 ## Version 0.3.0 - Advanced Key Management
 
-**Target:** Q2 2025
+**Target:** Q2 2026
 
 ### Key Rotation & Lifecycle
 - [ ] Key expiry tracking and notifications
-- [ ] Automated key rotation workflows
 - [ ] Key usage statistics and audit logs
 - [ ] Warn about old or unused keys
 - [ ] Key lifecycle management (creation date, last used, etc.)
@@ -49,7 +48,7 @@ This document outlines the planned features and improvements for sshman.
 
 ## Version 0.4.0 - Developer Experience
 
-**Target:** Q2 2025
+**Target:** Q2 2026
 
 ### Shell Completion
 - [ ] Fish shell completion support
@@ -75,7 +74,7 @@ This document outlines the planned features and improvements for sshman.
 
 ## Version 0.5.0 - Security & Compliance
 
-**Target:** Q3 2025
+**Target:** Q3 2026
 
 ### Security Features
 - [ ] Hardware security key (YubiKey/FIDO2/U2F) integration
@@ -96,7 +95,7 @@ This document outlines the planned features and improvements for sshman.
 
 ## Version 1.0.0 - Production Ready
 
-**Target:** Q4 2025
+**Target:** Q4 2026
 
 ### Platform Support
 - [ ] Windows native support
@@ -150,6 +149,19 @@ This document outlines the planned features and improvements for sshman.
 
 ## Completed Features
 
+### Version 0.2.0 (Unreleased)
+- [x] SSH key rotation with automated workflows
+- [x] SSH key archiving to `~/.ssh/archived/`
+- [x] SSH key unarchiving and restoration
+- [x] SSH config backup during rotation
+- [x] Connection profile updates during rotation
+- [x] Public key deployment to remote servers
+
+### Version 0.1.1
+- [x] Connection profile management (connect-new, connect commands)
+- [x] Profile storage in `~/.sshman/profiles.json`
+- [x] Tab completion for connection profiles
+
 ### Version 0.1.0
 - [x] SSH key generation (ED25519, RSA, ECDSA)
 - [x] Folder-based key organization
@@ -158,8 +170,6 @@ This document outlines the planned features and improvements for sshman.
 - [x] ssh-agent integration (use/set commands)
 - [x] Auto-directory SSH key switching
 - [x] Shell completion (bash, zsh)
-- [x] Connection profile creation
-- [x] Basic connection management
 - [x] Security checks and warnings
 - [x] GitHub Actions CI/CD
 - [x] Documentation website

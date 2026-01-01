@@ -5,6 +5,8 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.Console;
@@ -35,6 +37,8 @@ import java.util.stream.Stream;
 )
 public class ArchiveCommand implements Callable<Integer> {
 
+    private static final Logger logger = LoggerFactory.getLogger(ArchiveCommand.class);
+
     @Spec
     private CommandSpec spec;
 
@@ -59,6 +63,9 @@ public class ArchiveCommand implements Callable<Integer> {
         PrintWriter out = spec.commandLine().getOut();
         PrintWriter err = spec.commandLine().getErr();
 
+        out.println("Equivalent SSH command: none");
+        out.println();
+
         Path sshDir = getSshDirectory();
         Path archiveDir = sshDir.resolve("archived");
 
@@ -78,6 +85,7 @@ public class ArchiveCommand implements Callable<Integer> {
                 err.println();
                 err.println("Available keys:");
                 listAvailableKeys(sshDir, err);
+                logger.error("Key not found: {}", keyName);
                 return 1;
             }
         }
@@ -85,12 +93,14 @@ public class ArchiveCommand implements Callable<Integer> {
         // Check if the key is already in the archived directory
         if (keyPath.startsWith(archiveDir)) {
             err.println("Key is already archived: " + keyName);
+            logger.error("Key already archived: {}", keyName);
             return 1;
         }
 
         // Verify it's a private key
         if (!isPrivateKey(keyPath)) {
             err.println("Not a valid private key: " + keyPath);
+            logger.error("Not a valid private key: {}", keyName);
             return 1;
         }
 
@@ -110,8 +120,10 @@ public class ArchiveCommand implements Callable<Integer> {
                 // Prompt for confirmation
                 if (!confirmArchive(err)) {
                     err.println("Archive cancelled.");
+                    logger.info("Archive cancelled by user: {}", keyName);
                     return 1;
                 }
+                logger.warn("Archiving key in use by {} host(s): {}", affectedHosts.size(), keyName);
             }
         }
 
@@ -120,8 +132,11 @@ public class ArchiveCommand implements Callable<Integer> {
             Files.createDirectories(archiveDir);
         } catch (IOException e) {
             err.println("Failed to create archive directory: " + e.getMessage());
+            logger.error("Failed to create archive directory: {}", e.getMessage());
             return 1;
         }
+
+        logger.info("Archiving key: {}", keyName);
 
         // Archive the key and its public key if it exists
         return archiveKey(keyPath, archiveDir, affectedHosts, out, err);
@@ -222,10 +237,12 @@ public class ArchiveCommand implements Callable<Integer> {
                 }
             }
 
+            logger.info("Archived key to: archived/{}", relativeKeyPath);
             return 0;
 
         } catch (IOException e) {
             err.println("Failed to archive key: " + e.getMessage());
+            logger.error("Failed to archive key: {}", e.getMessage());
             return 1;
         }
     }

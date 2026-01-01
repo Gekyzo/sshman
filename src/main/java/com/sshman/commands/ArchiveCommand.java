@@ -1,30 +1,28 @@
-package com.sshman;
+package com.sshman.commands;
 
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Parameters;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Spec;
+import com.sshman.constants.SshManConstants;
+import com.sshman.utils.SshKeyUtils;
+import com.sshman.utils.printer.Printer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
+
+import static com.sshman.constants.SshManConstants.*;
+import static com.sshman.utils.printer.Text.*;
 
 @Command(
     name = "archive",
@@ -39,8 +37,8 @@ public class ArchiveCommand implements Callable<Integer> {
 
     private static final Logger logger = LoggerFactory.getLogger(ArchiveCommand.class);
 
-    @Spec
-    private CommandSpec spec;
+    @Mixin
+    private Printer printer;
 
     @Parameters(
         index = "0",
@@ -55,19 +53,24 @@ public class ArchiveCommand implements Callable<Integer> {
     @Option(names = {"-f", "--force"}, description = "Skip confirmation prompt when key is in use")
     private boolean force;
 
-    // Private key header bytes: "-----BEGIN"
-    private static final byte[] PRIVATE_KEY_MAGIC = "-----BEGIN".getBytes();
+    // ========================================================================
+    // Constants
+    // ========================================================================
+
+    private static final String HEADER_LINE = "═".repeat(65);
+    private static final String SEPARATOR_LINE = "─".repeat(65);
+
+    // ========================================================================
+    // Main Entry Point
+    // ========================================================================
 
     @Override
     public Integer call() {
-        PrintWriter out = spec.commandLine().getOut();
-        PrintWriter err = spec.commandLine().getErr();
-
-        out.println("Equivalent SSH command: none");
-        out.println();
+        printer.println(gray("Equivalent SSH command: "), gray("none"));
+        printer.emptyLine();
 
         Path sshDir = getSshDirectory();
-        Path archiveDir = sshDir.resolve("archived");
+        Path archiveDir = sshDir.resolve(DirectoryNames.ARCHIVED);
 
         // Resolve the key path
         Path keyPath = sshDir.resolve(keyName);
@@ -81,10 +84,13 @@ public class ArchiveCommand implements Callable<Integer> {
                 // Update keyName to the relative path
                 keyName = sshDir.relativize(foundKey).toString();
             } else {
-                err.println("Key not found: " + keyName);
-                err.println();
-                err.println("Available keys:");
-                listAvailableKeys(sshDir, err);
+                printer.error(red("Key not found: "), bold(keyName));
+                printer.emptyLine();
+                printer.println(yellow("Available keys:"));
+                SshKeyUtils.listAvailableKeys(sshDir, printer,
+                    SshKeyUtils.ListKeysOptions.defaults()
+                        .excludeArchivedKeys(true)
+                        .excludeMetaFiles(true));
                 logger.error("Key not found: {}", keyName);
                 return 1;
             }
@@ -92,34 +98,34 @@ public class ArchiveCommand implements Callable<Integer> {
 
         // Check if the key is already in the archived directory
         if (keyPath.startsWith(archiveDir)) {
-            err.println("Key is already archived: " + keyName);
+            printer.error(red("Key is already archived: "), bold(keyName));
             logger.error("Key already archived: {}", keyName);
             return 1;
         }
 
         // Verify it's a private key
-        if (!isPrivateKey(keyPath)) {
-            err.println("Not a valid private key: " + keyPath);
+        if (!SshKeyUtils.isPrivateKey(keyPath)) {
+            printer.error(red("Not a valid private key: "), bold(keyPath.toString()));
             logger.error("Not a valid private key: {}", keyName);
             return 1;
         }
 
         // Check if key is used in SSH config
-        Path configPath = sshDir.resolve("config");
+        Path configPath = sshDir.resolve(FileNames.CONFIG);
         Set<String> affectedHosts = new HashSet<>();
         if (Files.exists(configPath)) {
             affectedHosts = findHostsUsingKey(configPath, keyPath);
 
             if (!affectedHosts.isEmpty() && !force) {
-                err.println("Warning: This key is currently used in SSH config for:");
+                printer.println(yellow("⚠ Warning: "), textOf("This key is currently used in SSH config for:"));
                 for (String host : affectedHosts) {
-                    err.println("  - " + host);
+                    printer.println("  ", gray("- "), cyan(host));
                 }
-                err.println();
+                printer.emptyLine();
 
                 // Prompt for confirmation
-                if (!confirmArchive(err)) {
-                    err.println("Archive cancelled.");
+                if (!confirmArchive()) {
+                    printer.println(gray("Archive cancelled."));
                     logger.info("Archive cancelled by user: {}", keyName);
                     return 1;
                 }
@@ -131,7 +137,7 @@ public class ArchiveCommand implements Callable<Integer> {
         try {
             Files.createDirectories(archiveDir);
         } catch (IOException e) {
-            err.println("Failed to create archive directory: " + e.getMessage());
+            printer.error(red("Failed to create archive directory: "), textOf(e.getMessage()));
             logger.error("Failed to create archive directory: {}", e.getMessage());
             return 1;
         }
@@ -139,14 +145,18 @@ public class ArchiveCommand implements Callable<Integer> {
         logger.info("Archiving key: {}", keyName);
 
         // Archive the key and its public key if it exists
-        return archiveKey(keyPath, archiveDir, affectedHosts, out, err);
+        return archiveKey(keyPath, archiveDir, affectedHosts);
     }
+
+    // ========================================================================
+    // Directory and Path Methods
+    // ========================================================================
 
     private Path getSshDirectory() {
         if (customPath != null && !customPath.isEmpty()) {
             return Path.of(customPath);
         }
-        return Path.of(System.getProperty("user.home"), ".ssh");
+        return Path.of(System.getProperty(SystemProperties.USER_HOME), DirectoryNames.SSH);
     }
 
     /**
@@ -154,13 +164,13 @@ public class ArchiveCommand implements Callable<Integer> {
      * Excludes the archived directory from search.
      */
     private Path findKeyRecursive(Path baseDir, String keyName) {
-        Path archiveDir = baseDir.resolve("archived");
+        Path archiveDir = baseDir.resolve(DirectoryNames.ARCHIVED);
         try (Stream<Path> stream = Files.walk(baseDir)) {
             return stream
                 .filter(Files::isRegularFile)
                 .filter(p -> !p.startsWith(archiveDir))  // Exclude archived directory
                 .filter(p -> p.getFileName().toString().equals(keyName))
-                .filter(this::isPrivateKey)
+                .filter(SshKeyUtils::isPrivateKey)
                 .findFirst()
                 .orElse(null);
         } catch (IOException e) {
@@ -168,42 +178,22 @@ public class ArchiveCommand implements Callable<Integer> {
         }
     }
 
-    private boolean isPrivateKey(Path path) {
-        if (path.getFileName().toString().endsWith(".pub")) {
-            return false;
-        }
+    // ========================================================================
+    // Archive Methods
+    // ========================================================================
 
-        try (InputStream is = Files.newInputStream(path)) {
-            byte[] header = new byte[32];
-            int bytesRead = is.read(header);
-
-            if (bytesRead < PRIVATE_KEY_MAGIC.length) {
-                return false;
-            }
-
-            // Check if starts with "-----BEGIN"
-            for (int i = 0; i < PRIVATE_KEY_MAGIC.length; i++) {
-                if (header[i] != PRIVATE_KEY_MAGIC[i]) {
-                    return false;
-                }
-            }
-
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    private int archiveKey(Path keyPath, Path archiveDir, Set<String> affectedHosts, PrintWriter out, PrintWriter err) {
+    private int archiveKey(Path keyPath, Path archiveDir, Set<String> affectedHosts) {
         Path sshDir = getSshDirectory();
-        Path pubKeyPath = Path.of(keyPath.toString() + ".pub");
+        Path pubKeyPath = Path.of(keyPath.toString() + FileExtensions.PUBLIC_KEY);
+        Path metaPath = Path.of(keyPath.toString() + FileExtensions.METADATA);
 
         // Calculate relative path from SSH directory
         Path relativeKeyPath = sshDir.relativize(keyPath);
 
         // Destination paths in archive directory
         Path archivedKeyPath = archiveDir.resolve(relativeKeyPath);
-        Path archivedPubKeyPath = Path.of(archivedKeyPath.toString() + ".pub");
+        Path archivedPubKeyPath = Path.of(archivedKeyPath.toString() + FileExtensions.PUBLIC_KEY);
+        Path archivedMetaPath = Path.of(archivedKeyPath.toString() + FileExtensions.METADATA);
 
         try {
             // Create parent directories in archive if needed
@@ -212,40 +202,83 @@ public class ArchiveCommand implements Callable<Integer> {
                 Files.createDirectories(archivedKeyParent);
             }
 
+            // Print header
+            printer.println(bold(HEADER_LINE));
+            printer.println(bold("  Archiving SSH Key"));
+            printer.println(bold(HEADER_LINE));
+            printer.emptyLine();
+
             // Move the private key
             Files.move(keyPath, archivedKeyPath, StandardCopyOption.REPLACE_EXISTING);
-            out.println("Archived: " + relativeKeyPath + " -> archived/" + relativeKeyPath);
+            printer.println(
+                green("✓ "),
+                label("Private key"),
+                gray(relativeKeyPath.toString()),
+                gray(" → "),
+                cyan("archived/" + relativeKeyPath)
+            );
 
             // Move the public key if it exists
             if (Files.exists(pubKeyPath)) {
                 Files.move(pubKeyPath, archivedPubKeyPath, StandardCopyOption.REPLACE_EXISTING);
-                out.println("Archived: " + relativeKeyPath + ".pub -> archived/" + relativeKeyPath + ".pub");
+                printer.println(
+                    green("✓ "),
+                    label("Public key"),
+                    gray(relativeKeyPath + FileExtensions.PUBLIC_KEY),
+                    gray(" → "),
+                    cyan(DirectoryNames.ARCHIVED + "/" + relativeKeyPath + FileExtensions.PUBLIC_KEY)
+                );
+            }
+
+            // Move the metadata file if it exists
+            if (Files.exists(metaPath)) {
+                Files.move(metaPath, archivedMetaPath, StandardCopyOption.REPLACE_EXISTING);
+                printer.println(
+                    green("✓ "),
+                    label("Metadata"),
+                    gray(relativeKeyPath + FileExtensions.METADATA),
+                    gray(" → "),
+                    cyan(DirectoryNames.ARCHIVED + "/" + relativeKeyPath + FileExtensions.METADATA)
+                );
             }
 
             // Clean up empty directories left behind
             cleanupEmptyDirectories(keyPath.getParent(), sshDir);
 
-            out.println();
-            out.println("Key successfully archived to: " + sshDir.relativize(archivedKeyPath));
+            printer.emptyLine();
+            printer.println(gray(SEPARATOR_LINE));
+            printer.println(green("✓ Key successfully archived!"));
+            printer.emptyLine();
+            printer.println(label("Location"), textOf(sshDir.relativize(archivedKeyPath).toString()));
 
             // Show warning if key is still referenced in config
             if (!affectedHosts.isEmpty()) {
-                out.println();
-                out.println("Warning: Archived key is still referenced in ~/.ssh/config for hosts:");
+                printer.emptyLine();
+                printer.println(yellow("⚠ Warning: "), textOf("Archived key is still referenced in " + PathPatterns.SSH_DIR_PATTERN + FileNames.CONFIG + ":"));
                 for (String host : affectedHosts) {
-                    out.println("  - " + host);
+                    printer.println("  ", gray("- "), cyan(host));
                 }
+                printer.emptyLine();
+                printer.println(gray("Consider updating your SSH config to remove or update these references."));
             }
 
-            logger.info("Archived key to: archived/{}", relativeKeyPath);
+            printer.emptyLine();
+            printer.println(gray("To restore this key, use: "), bold("sshman unarchive %s", keyName));
+            printer.println(bold(HEADER_LINE));
+
+            logger.info("Archived key to: {}/{}", DirectoryNames.ARCHIVED, relativeKeyPath);
             return 0;
 
         } catch (IOException e) {
-            err.println("Failed to archive key: " + e.getMessage());
+            printer.error(red("Failed to archive key: "), textOf(e.getMessage()));
             logger.error("Failed to archive key: {}", e.getMessage());
             return 1;
         }
     }
+
+    // ========================================================================
+    // SSH Config Parsing Methods
+    // ========================================================================
 
     /**
      * Parse SSH config file and find hosts that use the specified key.
@@ -258,7 +291,7 @@ public class ArchiveCommand implements Callable<Integer> {
             // Get canonical path for comparison (handles symlinks, ~ expansion)
             Path canonicalKeyPath = keyPath.toRealPath();
             Path sshDir = getSshDirectory();
-            String userHome = System.getProperty("user.home");
+            String userHome = System.getProperty(SystemProperties.USER_HOME);
 
             String currentHost = null;
             List<String> lines = Files.readAllLines(configPath);
@@ -272,14 +305,14 @@ public class ArchiveCommand implements Callable<Integer> {
                 }
 
                 // Parse Host directive
-                if (trimmed.toLowerCase().startsWith("host ")) {
-                    currentHost = trimmed.substring(5).trim();
+                if (trimmed.toLowerCase().startsWith(SshConfigKeywords.HOST)) {
+                    currentHost = trimmed.substring(SshConfigKeywords.HOST.length()).trim();
                     continue;
                 }
 
                 // Parse IdentityFile directive
-                if (currentHost != null && trimmed.toLowerCase().startsWith("identityfile ")) {
-                    String identityFile = trimmed.substring(13).trim();
+                if (currentHost != null && trimmed.toLowerCase().startsWith(SshConfigKeywords.IDENTITY_FILE)) {
+                    String identityFile = trimmed.substring(SshConfigKeywords.IDENTITY_FILE.length()).trim();
 
                     // Remove quotes if present
                     if (identityFile.startsWith("\"") && identityFile.endsWith("\"")) {
@@ -287,8 +320,8 @@ public class ArchiveCommand implements Callable<Integer> {
                     }
 
                     // Expand ~ to user home
-                    if (identityFile.startsWith("~/")) {
-                        identityFile = userHome + identityFile.substring(1);
+                    if (identityFile.startsWith(PathPatterns.HOME_PREFIX)) {
+                        identityFile = userHome + identityFile.substring(PathPatterns.HOME_PREFIX.length() - 1);
                     }
 
                     // Resolve to absolute path
@@ -317,31 +350,38 @@ public class ArchiveCommand implements Callable<Integer> {
         return affectedHosts;
     }
 
+    // ========================================================================
+    // User Interaction Methods
+    // ========================================================================
+
     /**
      * Prompt user for confirmation to archive the key.
      * Returns true if user confirms, false otherwise.
      */
-    private boolean confirmArchive(PrintWriter err) {
+    private boolean confirmArchive() {
         Console console = System.console();
 
         if (console != null) {
-            // Interactive terminal available
-            String response = console.readLine("Archive this key anyway? (y/N): ");
+            String response = console.readLine("%s%s",
+                yellow("Archive this key anyway? "),
+                gray("(y/N): ")
+            );
             return response != null && (response.equalsIgnoreCase("y") || response.equalsIgnoreCase("yes"));
         } else {
-            // Non-interactive or redirected input - try reading from stdin
             try {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                err.print("Archive this key anyway? (y/N): ");
-                err.flush();
+                printer.prompt(yellow("Archive this key anyway? "), gray("(y/N): "));
                 String response = reader.readLine();
                 return response != null && (response.equalsIgnoreCase("y") || response.equalsIgnoreCase("yes"));
             } catch (IOException e) {
-                // Can't read input, default to no
                 return false;
             }
         }
     }
+
+    // ========================================================================
+    // Cleanup Methods
+    // ========================================================================
 
     /**
      * Recursively remove empty directories up to the SSH base directory.
@@ -357,6 +397,7 @@ public class ArchiveCommand implements Callable<Integer> {
                 try (Stream<Path> entries = Files.list(dir)) {
                     if (entries.findAny().isEmpty()) {
                         Files.delete(dir);
+                        printer.println(gray("  Removed empty directory: "), gray(sshDir.relativize(dir).toString()));
                         // Recursively cleanup parent directories
                         cleanupEmptyDirectories(dir.getParent(), sshDir);
                     }
@@ -367,25 +408,9 @@ public class ArchiveCommand implements Callable<Integer> {
         }
     }
 
-    private void listAvailableKeys(Path sshDir, PrintWriter err) {
-        Path archiveDir = sshDir.resolve("archived");
-        try (Stream<Path> files = Files.walk(sshDir)) {
-            files.filter(Files::isRegularFile)
-                .filter(p -> !p.startsWith(archiveDir))  // Exclude archived keys
-                .filter(p -> !p.getFileName().toString().endsWith(".pub"))
-                .filter(p -> !p.getFileName().toString().equals("config"))
-                .filter(p -> !p.getFileName().toString().equals("known_hosts"))
-                .filter(p -> !p.getFileName().toString().equals("authorized_keys"))
-                .filter(this::isPrivateKey)
-                .sorted()
-                .forEach(p -> {
-                    Path relativePath = sshDir.relativize(p);
-                    err.println("  - " + relativePath);
-                });
-        } catch (IOException e) {
-            err.println("  (error listing keys)");
-        }
-    }
+    // ========================================================================
+    // Completion Candidates
+    // ========================================================================
 
     /**
      * Custom completion candidates for key names.
@@ -393,62 +418,8 @@ public class ArchiveCommand implements Callable<Integer> {
      */
     public static class ArchiveKeyCompletionCandidates implements Iterable<String> {
         @Override
-        public java.util.Iterator<String> iterator() {
-            List<String> keys = new ArrayList<>();
-            Path sshDir = Path.of(System.getProperty("user.home"), ".ssh");
-            Path archiveDir = sshDir.resolve("archived");
-
-            if (!Files.exists(sshDir) || !Files.isDirectory(sshDir)) {
-                return keys.iterator();
-            }
-
-            try (Stream<Path> files = Files.walk(sshDir)) {
-                files.filter(Files::isRegularFile)
-                    .filter(p -> !p.startsWith(archiveDir))  // Exclude archived directory
-                    .filter(p -> !p.getFileName().toString().endsWith(".pub"))
-                    .filter(p -> !p.getFileName().toString().equals("config"))
-                    .filter(p -> !p.getFileName().toString().equals("known_hosts"))
-                    .filter(p -> !p.getFileName().toString().equals("authorized_keys"))
-                    .filter(ArchiveCommand::isPrivateKeyStatic)
-                    .sorted()
-                    .forEach(p -> {
-                        Path relativePath = sshDir.relativize(p);
-                        keys.add(relativePath.toString());
-                    });
-            } catch (IOException e) {
-                // Return empty list on error
-            }
-
-            return keys.iterator();
-        }
-    }
-
-    /**
-     * Static version of isPrivateKey for use in completion candidates.
-     */
-    private static boolean isPrivateKeyStatic(Path path) {
-        if (path.getFileName().toString().endsWith(".pub")) {
-            return false;
-        }
-
-        try (InputStream is = Files.newInputStream(path)) {
-            byte[] header = new byte[32];
-            int bytesRead = is.read(header);
-
-            if (bytesRead < PRIVATE_KEY_MAGIC.length) {
-                return false;
-            }
-
-            // Check if starts with "-----BEGIN"
-            for (int i = 0; i < PRIVATE_KEY_MAGIC.length; i++) {
-                if (header[i] != PRIVATE_KEY_MAGIC[i]) {
-                    return false;
-                }
-            }
-
-            return true;
-        } catch (IOException e) {
-            return false;
+        public Iterator<String> iterator() {
+            return SshKeyUtils.getKeyCompletionCandidates(SshKeyUtils.KeyScanMode.NON_ARCHIVED);
         }
     }
 }

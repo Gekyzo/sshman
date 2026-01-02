@@ -116,7 +116,7 @@ public class UnarchiveCommand implements Callable<Integer> {
         // Check if key already exists at target location
         if (Files.exists(targetKeyPath) && !force) {
             printer.error(red("Key already exists at target location: "), bold(keyName));
-            printer.println(gray("Use "), bold("--force"), gray(" to overwrite the existing key."));
+            printer.error(gray("Use "), bold("--force"), gray(" to overwrite the existing key."));
             logger.error("Key already exists (use --force to overwrite): {}", keyName);
             return 1;
         }
@@ -257,8 +257,8 @@ public class UnarchiveCommand implements Callable<Integer> {
             printer.emptyLine();
             printer.println(gray(SEPARATOR_LINE));
             printer.println(green("✓ Key successfully restored!"));
+            printer.println(green("   Restored to: "), gray(relativeKeyPath.toString()));
             printer.emptyLine();
-            printer.println(label("Location"), textOf(relativeKeyPath.toString()));
 
             printer.emptyLine();
             printer.println(gray("Run '"), bold("sshman info %s", keyName), gray("' to see key details"));

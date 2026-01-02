@@ -248,8 +248,8 @@ public class ArchiveCommand implements Callable<Integer> {
             printer.emptyLine();
             printer.println(gray(SEPARATOR_LINE));
             printer.println(green("✓ Key successfully archived!"));
+            printer.println(green("   Archived to: "), gray(sshDir.relativize(archivedKeyPath).toString()));
             printer.emptyLine();
-            printer.println(label("Location"), textOf(sshDir.relativize(archivedKeyPath).toString()));
 
             // Show warning if key is still referenced in config
             if (!affectedHosts.isEmpty()) {

@@ -140,7 +140,7 @@ public class RotateCommand implements Callable<Integer> {
                 keyPath = foundKey;
                 keyName = sshDir.relativize(foundKey).toString();
             } else {
-                printer.println(red("✗ Key not found: "), bold(keyName));
+                printer.error(red("✗ Key not found: "), bold(keyName));
                 logOperation("FAILED", "Key not found: " + keyName);
                 return 1;
             }
@@ -148,14 +148,14 @@ public class RotateCommand implements Callable<Integer> {
 
         // Check if the key is already in the archived directory
         if (keyPath.startsWith(archiveDir)) {
-            printer.println(red("✗ Key is already archived: "), bold(keyName));
+            printer.error(red("✗ Key is already archived: "), bold(keyName));
             logOperation("FAILED", "Key already archived: " + keyName);
             return 1;
         }
 
         // Verify it's a private key
         if (!isPrivateKey(keyPath)) {
-            printer.println(red("✗ Not a valid private key: "), bold(keyPath.toString()));
+            printer.error(red("✗ Not a valid private key: "), bold(keyPath.toString()));
             logOperation("FAILED", "Not a private key: " + keyName);
             return 1;
         }
@@ -166,8 +166,8 @@ public class RotateCommand implements Callable<Integer> {
         String targetKeyType = newKeyType != null ? newKeyType : originalKeyType;
         String targetComment = comment != null ? comment : (originalComment != null ? originalComment : generateDefaultComment(keyName));
 
-        printer.println(label("Original type"), cyan(originalKeyType));
-        printer.println(label("New type"), cyan(targetKeyType));
+        printer.println(gray("Original key type: "), cyan(originalKeyType));
+        printer.println(gray("New key type: "), cyan(targetKeyType));
         printer.println(label("Comment"), gray(targetComment));
         printer.emptyLine();
 
@@ -841,9 +841,9 @@ public class RotateCommand implements Callable<Integer> {
         printer.println(bold(HEADER_LINE));
         printer.println(bold("  Rotation Summary"));
         printer.println(bold(HEADER_LINE));
-        printer.println(label("Total processed"), textOf(String.valueOf(keyNames.size())));
-        printer.println(label("Successful"), green(String.valueOf(successCount)));
-        printer.println(label("Failed"), failureCount > 0 ? red(String.valueOf(failureCount)) : textOf(String.valueOf(failureCount)));
+        printer.println(gray("Total keys processed: "), textOf(String.valueOf(keyNames.size())));
+        printer.println(label("Successful"), green(" " + successCount));
+        printer.println(label("Failed"), failureCount > 0 ? red(" " + failureCount) : textOf(" " + failureCount));
         printer.println(bold(HEADER_LINE));
     }
 

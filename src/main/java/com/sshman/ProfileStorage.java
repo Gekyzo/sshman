@@ -67,7 +67,7 @@ public class ProfileStorage {
             .findFirst();
 
         if (existing.isPresent()) {
-            throw new IllegalArgumentException("Profile with alias '" + profile.getAlias() + "' already exists");
+            throw new IllegalArgumentException("Profile with alias '" + profile.getAlias() + "' already exists in " + profilesFile);
         }
 
         profiles.add(profile);

@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import static com.sshman.constants.SshManConstants.*;
@@ -92,6 +94,15 @@ public class ConnectNewCommand implements Callable<Integer> {
             printer.emptyLine();
             printer.println(bold(HEADER_LINE));
 
+            // Offer to test the connection
+            printer.emptyLine();
+            printer.prompt(cyan("Test connection now? (y/n): "));
+            String testConnection = reader.readLine();
+
+            if (testConnection != null && testConnection.trim().equalsIgnoreCase("y")) {
+                return testConnectionAndSuggestFix(reader, profile);
+            }
+
             return 0;
 
         } catch (IOException e) {
@@ -158,6 +169,119 @@ public class ConnectNewCommand implements Callable<Integer> {
         printer.prompt(cyan(prompt + ": "));
         String value = reader.readLine();
         return value != null ? value.trim() : "";
+    }
+
+    // ========================================================================
+    // Connection Test Methods
+    // ========================================================================
+
+    private int testConnectionAndSuggestFix(BufferedReader reader, Profile profile) throws IOException {
+        printer.emptyLine();
+        printer.println(gray("Testing connection to "), cyan("%s@%s", profile.getUsername(), profile.getHostname()), gray("..."));
+
+        String sshCommand = profile.toSshCommand() + " -o ConnectTimeout=10 -o BatchMode=yes exit";
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder();
+            pb.command("sh", "-c", sshCommand);
+            pb.inheritIO();
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+
+            printer.emptyLine();
+            if (exitCode == 0) {
+                printer.println(green("✓ "), textOf("Connection successful!"));
+                return 0;
+            } else {
+                printer.println(red("✗ "), textOf("Connection failed (exit code: " + exitCode + ")"));
+                return suggestSshCopyId(reader, profile);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            printer.error(red("Connection test interrupted"));
+            return 1;
+        } catch (IOException e) {
+            printer.error(red("Connection test failed: "), textOf(e.getMessage()));
+            return suggestSshCopyId(reader, profile);
+        }
+    }
+
+    private int suggestSshCopyId(BufferedReader reader, Profile profile) throws IOException {
+        String sshKey = profile.getSshKey();
+
+        if (sshKey == null || sshKey.isEmpty()) {
+            printer.emptyLine();
+            printer.println(gray("Tip: Configure an SSH key for passwordless authentication."));
+            return 1;
+        }
+
+        // Derive public key path
+        String pubKeyPath = sshKey.endsWith(FileExtensions.PUBLIC_KEY) ? sshKey : sshKey + FileExtensions.PUBLIC_KEY;
+
+        if (!Files.exists(Path.of(pubKeyPath))) {
+            printer.emptyLine();
+            printer.println(yellow("⚠ "), textOf("Public key not found at: "), gray(pubKeyPath));
+            printer.println(gray("Tip: Generate a public key or check the key path."));
+            return 1;
+        }
+
+        printer.emptyLine();
+        printer.println(gray("This may be a first-time connection. You can copy your public key to the server."));
+        printer.emptyLine();
+        printer.prompt(cyan("Copy public key to server? (y/n): "));
+        String copyKey = reader.readLine();
+
+        if (copyKey == null || !copyKey.trim().equalsIgnoreCase("y")) {
+            printer.emptyLine();
+            printer.println(gray("You can manually run:"));
+            printer.println("  ", cyan("ssh-copy-id -i %s %s@%s", pubKeyPath, profile.getUsername(), profile.getHostname()));
+            return 1;
+        }
+
+        return executeSshCopyId(pubKeyPath, profile);
+    }
+
+    private int executeSshCopyId(String pubKeyPath, Profile profile) {
+        printer.emptyLine();
+        printer.println(gray("Running ssh-copy-id..."));
+        printer.emptyLine();
+
+        String target = profile.getUsername() + "@" + profile.getHostname();
+
+        List<String> command = new ArrayList<>();
+        command.add("ssh-copy-id");
+        command.add("-i");
+        command.add(pubKeyPath);
+        if (profile.getPort() != null && profile.getPort() != 22) {
+            command.add("-p");
+            command.add(String.valueOf(profile.getPort()));
+        }
+        command.add(target);
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.inheritIO();
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+
+            printer.emptyLine();
+            if (exitCode == 0) {
+                printer.println(green("✓ "), textOf("Public key copied successfully!"));
+                printer.println(gray("You can now connect with: "), cyan("sshman connect %s", profile.getAlias()));
+                return 0;
+            } else {
+                printer.println(red("✗ "), textOf("Failed to copy public key (exit code: " + exitCode + ")"));
+                return 1;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            printer.error(red("ssh-copy-id interrupted"));
+            return 1;
+        } catch (IOException e) {
+            printer.error(red("Failed to run ssh-copy-id: "), textOf(e.getMessage()));
+            printer.println(gray("Make sure ssh-copy-id is installed and in PATH"));
+            return 1;
+        }
     }
 
 }

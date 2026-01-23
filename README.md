@@ -7,7 +7,7 @@
 
 **sshman** simplifies SSH key management by providing a centralized, user-friendly command-line interface. Generate, list, and inspect SSH keys with ease, featuring security checks, detailed metadata, and beautiful output formatting.
 
-## 🔧 SSH Commands Wrapped
+## SSH Commands Wrapped
 
 This tool provides a convenient interface for the following SSH-related commands:
 
@@ -17,20 +17,20 @@ This tool provides a convenient interface for the following SSH-related commands
 - **`ssh`** - Connect to remote servers using saved profiles (via connect command)
 - **`eval`** - Source agent environment variables into the current shell
 
-## ✨ Features
+## Features
 
-- 🔑 **Generate SSH Keys** - Create ED25519, RSA, or ECDSA keys with sensible defaults
-- 📁 **Folder Organization** - Organize keys with nested folder structures (e.g., `work/project-a`)
-- 🚀 **Use SSH Keys** - Start ssh-agent and add keys with a single command
-- 🔄 **Auto-Directory Switching** - Automatically load SSH keys per project directory (like `.nvmrc`)
-- 🔌 **Connection Profiles** - Save and manage SSH connection profiles with custom settings
-- 📋 **List Keys** - View all SSH keys with detailed information (type, permissions, modification dates)
-- 🔍 **Inspect Keys** - Display comprehensive key information including fingerprints and security warnings
-- 🛡️ **Security Checks** - Detect insecure file permissions and weak key types
-- 🎨 **Beautiful Output** - Color-coded, well-formatted terminal output
-- ⚡ **Fast & Lightweight** - Single JAR executable with no runtime dependencies
+- **Generate SSH Keys** - Create ED25519, RSA, or ECDSA keys with sensible defaults
+- **Folder Organization** - Organize keys with nested folder structures (e.g., `work/project-a`)
+- **Use SSH Keys** - Start ssh-agent and add keys with a single command
+- **Auto-Directory Switching** - Automatically load SSH keys per project directory (like `.nvmrc`)
+- **Connection Profiles** - Save and manage SSH connection profiles with custom settings
+- **List Keys** - View all SSH keys with detailed information (type, permissions, modification dates)
+- **Inspect Keys** - Display comprehensive key information including fingerprints and security warnings
+- **Security Checks** - Detect insecure file permissions and weak key types
+- **Beautiful Output** - Color-coded, well-formatted terminal output
+- **Fast & Lightweight** - Single JAR executable with no runtime dependencies
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 
@@ -49,7 +49,7 @@ cd sshman
 mvn clean package
 
 # The executable JAR will be created at:
-# target/sshman-0.1.0-jar-with-dependencies.jar
+# target/sshman-0.2.0-jar-with-dependencies.jar
 
 # Test the build
 ./sshman --version
@@ -125,7 +125,7 @@ Now you can use:
 
 See [completions/README.md](completions/README.md) for detailed installation instructions.
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Generate a new ED25519 key with folder organization (recommended)
@@ -158,7 +158,7 @@ sshman connect-new
 sshman connect myserver
 ```
 
-## 📖 Usage
+## Usage
 
 ### General Help
 
@@ -377,6 +377,50 @@ Command: ssh -p 22 -i /home/user/.ssh/work/id_work_ed25519 deploy@prod.example.c
 - Profiles are stored in `~/.sshman/profiles.json`
 - Tab completion is available for profile aliases
 - Profiles include: alias, hostname, username, port, and optional SSH key path
+
+### List Connection Profiles
+
+View all saved SSH connection profiles.
+
+```bash
+# List all saved profiles
+sshman list-profiles
+```
+
+**Example Output:**
+
+```
+Available profiles:
+  production-server  deploy@prod.example.com:22
+  staging-server     ubuntu@staging.example.com:22
+  dev-machine        dev@192.168.1.100:22
+```
+
+### Archive SSH Keys
+
+Archive unused SSH keys to declutter your `~/.ssh` directory.
+
+```bash
+# Archive a key (moves to ~/.ssh/archived/)
+sshman archive old-key
+
+# Archive preserves directory structure
+sshman archive work/old-project/id_ed25519
+```
+
+The archived keys are moved to `~/.ssh/archived/` with their original directory structure preserved.
+
+### Unarchive SSH Keys
+
+Restore previously archived SSH keys.
+
+```bash
+# Restore an archived key
+sshman unarchive old-key
+
+# Restore with original path
+sshman unarchive work/old-project/id_ed25519
+```
 
 ### Auto-Directory SSH Key Switching
 
@@ -682,7 +726,7 @@ This file contains a history of all SSH key rotations performed by sshman.
 - **[2025-01-31 14:30:23]** SUCCESS - Completed rotation: work-key
 ```
 
-## 🎯 Common Use Cases
+## Common Use Cases
 
 ### Setting Up a New GitHub Key
 
@@ -755,7 +799,7 @@ ssh-add -l
 ssh-add -D
 ```
 
-## 🏗️ Development
+## Development
 
 ### Running Tests
 
@@ -790,17 +834,22 @@ mvn compile exec:java -Dexec.mainClass="com.sshman.SshMan" -Dexec.args="--help"
 sshman/
 ├── src/
 │   ├── main/java/com/sshman/
-│   │   ├── SshMan.java           # Main entry point
-│   │   ├── GenerateCommand.java  # Key generation
-│   │   ├── ListCommand.java      # List keys
-│   │   └── InfoCommand.java      # Key information
-│   └── test/java/com/sshman/     # Unit tests
-├── pom.xml                        # Maven configuration
-├── sshman                         # Wrapper script
-└── README.md                      # This file
+│   │   ├── SshMan.java              # Main entry point
+│   │   ├── Profile.java             # Profile data model
+│   │   ├── ProfileStorage.java      # Profile persistence
+│   │   └── commands/                # Command implementations
+│   │       ├── GenerateCommand.java
+│   │       ├── ListCommand.java
+│   │       ├── InfoCommand.java
+│   │       ├── ConnectCommand.java
+│   │       └── ...
+│   └── test/java/com/sshman/        # Unit tests
+├── pom.xml                           # Maven configuration
+├── sshman                            # Wrapper script
+└── README.md                         # This file
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
@@ -811,20 +860,20 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 3. Add tests for new features
 4. Update documentation as needed
 
-## 📋 Roadmap
+## Roadmap
 
 See [seeds.md](seeds.md) for the full feature specification and planned enhancements:
 
 - [x] ssh-agent integration (use/set commands)
-- [ ] Profile management for SSH connections
+- [x] Profile management for SSH connections
 - [ ] SSH config file generation and sync
-- [ ] Key rotation and expiry tracking
+- [x] Key rotation and expiry tracking
 - [ ] Backup and restore functionality
 - [ ] JSON output for automation
-- [x] Shell completion (bash, zsh) ✅
+- [x] Shell completion (bash, zsh)
 - [ ] Shell completion (fish)
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### "ssh-keygen not found"
 
@@ -861,15 +910,15 @@ If you see permission warnings, fix them with:
 chmod 600 ~/.ssh/your-key-name
 ```
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with [picocli](https://picocli.info/) - A mighty tiny command line interface
 - Inspired by the need for better SSH key management workflows
 
 ---
 
-**Made with ❤️ for developers who love clean CLIs**
+**Made for developers who love clean CLIs**

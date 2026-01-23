@@ -3,6 +3,9 @@ package com.sshman;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.sshman.exceptions.ConfigDirectoryException;
+import com.sshman.exceptions.DuplicateProfileException;
+import com.sshman.exceptions.ProfileStorageException;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -21,8 +24,19 @@ public class ProfileStorage {
     private final Path configDir;
     private final Path profilesFile;
 
+    /**
+     * Creates a ProfileStorage using the default config directory (~/.sshman).
+     */
     public ProfileStorage() {
-        this.configDir = Path.of(System.getProperty("user.home"), ".sshman");
+        this(Path.of(System.getProperty("user.home"), ".sshman"));
+    }
+
+    /**
+     * Creates a ProfileStorage with a custom config directory.
+     * Useful for testing with isolated storage.
+     */
+    public ProfileStorage(Path configDir) {
+        this.configDir = configDir;
         this.profilesFile = configDir.resolve(PROFILES_FILE);
         ensureConfigDirExists();
     }
@@ -33,7 +47,7 @@ public class ProfileStorage {
                 Files.createDirectories(configDir);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create config directory: " + e.getMessage(), e);
+            throw new ConfigDirectoryException("Failed to create config directory: " + e.getMessage(), e);
         }
     }
 
@@ -47,7 +61,7 @@ public class ProfileStorage {
             List<Profile> profiles = gson.fromJson(reader, listType);
             return profiles != null ? profiles : new ArrayList<>();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load profiles: " + e.getMessage(), e);
+            throw new ProfileStorageException("Failed to load profiles: " + e.getMessage(), e);
         }
     }
 
@@ -55,7 +69,7 @@ public class ProfileStorage {
         try (Writer writer = Files.newBufferedWriter(profilesFile)) {
             gson.toJson(profiles, writer);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save profiles: " + e.getMessage(), e);
+            throw new ProfileStorageException("Failed to save profiles: " + e.getMessage(), e);
         }
     }
 
@@ -63,11 +77,11 @@ public class ProfileStorage {
         List<Profile> profiles = loadProfiles();
 
         Optional<Profile> existing = profiles.stream()
-            .filter(p -> p.getAlias().equals(profile.getAlias()))
+            .filter(p -> p.alias().equals(profile.alias()))
             .findFirst();
 
         if (existing.isPresent()) {
-            throw new IllegalArgumentException("Profile with alias '" + profile.getAlias() + "' already exists in " + profilesFile);
+            throw new DuplicateProfileException(profile.alias(), profilesFile.toString());
         }
 
         profiles.add(profile);
@@ -76,13 +90,13 @@ public class ProfileStorage {
 
     public Optional<Profile> getProfile(String alias) {
         return loadProfiles().stream()
-            .filter(p -> p.getAlias().equals(alias))
+            .filter(p -> p.alias().equals(alias))
             .findFirst();
     }
 
     public boolean deleteProfile(String alias) {
         List<Profile> profiles = loadProfiles();
-        boolean removed = profiles.removeIf(p -> p.getAlias().equals(alias));
+        boolean removed = profiles.removeIf(p -> p.alias().equals(alias));
 
         if (removed) {
             saveProfiles(profiles);

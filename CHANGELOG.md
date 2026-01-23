@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-01-23
+
+### Added
+- `list-profiles` command to display saved connection profiles
+  - Short format shows alias and host for quick reference
+  - Long format (`--long`) shows full connection details
+- Connection test with ssh-copy-id suggestion for new profiles
+- Custom exception classes for profile storage errors
+
+### Changed
+- Profile class converted to Java record for immutability
+- ProfileStorage dependency injection via picocli factory for better testability
+- Improved command output formatting for consistency
+
+### Refactored
+- Commands reorganized into dedicated `commands` package
+- Magic strings extracted to `SshManConstants` class
+- Added domain models for SSH key management (`KeyInfo`, `KeyMetadata`, `KeyUse`)
+- Added utility classes (`Printer`, `Text`, `SshKeyUtils`)
+- SSH key utility functions consolidated
+
 ## [0.2.0] - 2026-01-01
 
 ### Added
@@ -146,6 +167,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI framework using picocli
 - Project structure and build configuration
 
+[0.3.0]: https://github.com/Gekyzo/sshman/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Gekyzo/sshman/releases/tag/v0.2.0
 [0.1.1]: https://github.com/Gekyzo/sshman/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Gekyzo/sshman/releases/tag/v0.1.0

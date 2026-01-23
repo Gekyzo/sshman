@@ -2,6 +2,8 @@ package com.sshman.commands;
 
 import com.sshman.Profile;
 import com.sshman.ProfileStorage;
+import com.sshman.ProfileStorageAware;
+import com.sshman.ProfileStorageProvider;
 import com.sshman.utils.printer.Printer;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -15,10 +17,11 @@ import static com.sshman.utils.printer.Text.*;
 
 @Command(
     name = "connect",
+    aliases = {"c"},
     description = "Connect to a saved SSH profile",
     mixinStandardHelpOptions = true
 )
-public class ConnectCommand implements Callable<Integer> {
+public class ConnectCommand implements Callable<Integer>, ProfileStorageAware {
 
     @Mixin
     private Printer printer;
@@ -30,12 +33,18 @@ public class ConnectCommand implements Callable<Integer> {
     )
     private String alias;
 
-    private final ProfileStorage storage = new ProfileStorage();
+    private ProfileStorageProvider storageProvider = ProfileStorageProvider.DEFAULT;
 
     private static final String HEADER_LINE = "═".repeat(65);
 
     @Override
+    public void setProfileStorageProvider(ProfileStorageProvider provider) {
+        this.storageProvider = provider;
+    }
+
+    @Override
     public Integer call() {
+        ProfileStorage storage = storageProvider.get();
         Optional<Profile> profileOpt = storage.getProfile(alias);
 
         if (profileOpt.isEmpty()) {
@@ -58,14 +67,14 @@ public class ConnectCommand implements Callable<Integer> {
         printer.println(bold(HEADER_LINE));
         printer.emptyLine();
 
-        printer.println(label("Profile"), cyan(profile.getAlias()));
-        printer.println(label("Hostname"), textOf(profile.getHostname()));
-        printer.println(label("Username"), textOf(profile.getUsername()));
-        if (profile.getPort() != null && profile.getPort() != 22) {
-            printer.println(label("Port"), textOf(String.valueOf(profile.getPort())));
+        printer.println(label("Profile"), cyan(profile.alias()));
+        printer.println(label("Hostname"), textOf(profile.hostname()));
+        printer.println(label("Username"), textOf(profile.username()));
+        if (profile.port() != null && profile.port() != 22) {
+            printer.println(label("Port"), textOf(String.valueOf(profile.port())));
         }
-        if (profile.getSshKey() != null && !profile.getSshKey().isEmpty()) {
-            printer.println(label("SSH Key"), gray(profile.getSshKey()));
+        if (profile.sshKey() != null && !profile.sshKey().isEmpty()) {
+            printer.println(label("SSH Key"), gray(profile.sshKey()));
         }
         printer.emptyLine();
 
@@ -73,7 +82,7 @@ public class ConnectCommand implements Callable<Integer> {
         printer.println("  ", textOf(sshCommand));
         printer.emptyLine();
 
-        printer.println(green("→ "), textOf("Connecting to "), bold(profile.getAlias()), textOf("..."));
+        printer.println(green("→ "), textOf("Connecting to "), bold(profile.alias()), textOf("..."));
         printer.println(bold(HEADER_LINE));
         printer.emptyLine();
 
@@ -90,12 +99,12 @@ public class ConnectCommand implements Callable<Integer> {
     }
 
     private void listProfiles() {
-        var profiles = storage.loadProfiles();
+        var profiles = storageProvider.get().loadProfiles();
         if (profiles.isEmpty()) {
             printer.error("  ", gray("(no profiles found)"));
         } else {
             profiles.forEach(p ->
-                printer.error("  ", cyan("- "), textOf(p.getAlias()), gray(" ("), textOf(p.getUsername() + "@" + p.getHostname()), gray(")"))
+                printer.error("  ", cyan("- "), textOf(p.alias()), gray(" ("), textOf(p.username() + "@" + p.hostname()), gray(")"))
             );
         }
     }
@@ -105,7 +114,7 @@ public class ConnectCommand implements Callable<Integer> {
         public Iterator<String> iterator() {
             ProfileStorage storage = new ProfileStorage();
             return storage.loadProfiles().stream()
-                .map(Profile::getAlias)
+                .map(Profile::alias)
                 .sorted()
                 .iterator();
         }

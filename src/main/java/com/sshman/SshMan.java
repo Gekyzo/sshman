@@ -24,19 +24,21 @@ import java.util.concurrent.Callable;
         InitCommand.class,
         ConnectNewCommand.class,
         ConnectCommand.class,
+        ListProfilesCommand.class,
         ArchiveCommand.class,
         UnarchiveCommand.class,
         RotateCommand.class,
         CommandLine.HelpCommand.class
     },
-    footer = "%nExamples:%n" +
-        "  sshman generate --algo ed25519 --use work%n" +
-        "  sshman list%n" +
-        "  sshman info work-key%n" +
-        "  eval \"$(sshman use id_ed25519 --quiet)\"%n" +
-        "  sshman init work/project-key%n" +
-        "  sshman connect-new%n" +
-        "  sshman connect myserver"
+    footer = """
+        %nExamples:
+          sshman generate --algo ed25519 --use work
+          sshman list
+          sshman info work-key
+          eval "$(sshman use id_ed25519 --quiet)"
+          sshman init work/project-key
+          sshman connect-new
+          sshman connect myserver"""
 )
 public class SshMan implements Callable<Integer> {
 
@@ -44,7 +46,7 @@ public class SshMan implements Callable<Integer> {
     CommandSpec spec;  // Injected by picocli
 
     public static void main(String[] args) {
-        int exitCode = new CommandLine(new SshMan())
+        int exitCode = new CommandLine(new SshMan(), new SshManFactory())
             .setCaseInsensitiveEnumValuesAllowed(true)
             .setExecutionExceptionHandler(new ExceptionHandler())
             .execute(args);

@@ -2,6 +2,8 @@ package com.sshman.commands;
 
 import com.sshman.Profile;
 import com.sshman.ProfileStorage;
+import com.sshman.ProfileStorageAware;
+import com.sshman.ProfileStorageProvider;
 import com.sshman.utils.SshKeyUtils;
 import com.sshman.utils.printer.Printer;
 import picocli.CommandLine.Command;
@@ -33,10 +35,17 @@ import static com.sshman.utils.printer.Text.*;
         "  sshman rotate id_rsa --dry-run%n" +
         "  sshman rotate id_rsa --upload user@example.com%n"
 )
-public class RotateCommand implements Callable<Integer> {
+public class RotateCommand implements Callable<Integer>, ProfileStorageAware {
 
     @Mixin
     private Printer printer;
+
+    private ProfileStorageProvider storageProvider = ProfileStorageProvider.DEFAULT;
+
+    @Override
+    public void setProfileStorageProvider(ProfileStorageProvider provider) {
+        this.storageProvider = provider;
+    }
 
     @Parameters(
         index = "0..*",
@@ -193,7 +202,7 @@ public class RotateCommand implements Callable<Integer> {
         if (!affectedProfiles.isEmpty()) {
             printer.println(bold("Connection profiles using this key:"));
             for (Profile profile : affectedProfiles) {
-                printer.println("  ", cyan("- "), textOf(profile.getAlias()));
+                printer.println("  ", cyan("- "), textOf(profile.alias()));
             }
             printer.emptyLine();
         }
@@ -536,15 +545,14 @@ public class RotateCommand implements Callable<Integer> {
         List<Profile> affected = new ArrayList<>();
 
         try {
-            ProfileStorage storage = new ProfileStorage();
-            List<Profile> allProfiles = storage.loadProfiles();
+            List<Profile> allProfiles = storageProvider.get().loadProfiles();
 
             String keyPathStr = keyPath.toString();
             Path canonicalKeyPath = keyPath.toRealPath();
 
             for (Profile profile : allProfiles) {
-                if (profile.getSshKey() != null) {
-                    Path profileKeyPath = Path.of(profile.getSshKey());
+                if (profile.sshKey() != null) {
+                    Path profileKeyPath = Path.of(profile.sshKey());
                     try {
                         if (profileKeyPath.toRealPath().equals(canonicalKeyPath)) {
                             affected.add(profile);
@@ -747,19 +755,23 @@ public class RotateCommand implements Callable<Integer> {
 
     private int updateProfiles(Path newKeyPath, List<Profile> affectedProfiles) {
         try {
-            ProfileStorage storage = new ProfileStorage();
+            ProfileStorage storage = storageProvider.get();
             List<Profile> allProfiles = storage.loadProfiles();
+            List<Profile> updatedProfiles = new ArrayList<>();
             int updatedCount = 0;
 
             for (Profile profile : allProfiles) {
                 if (affectedProfiles.contains(profile)) {
-                    profile.setSshKey(newKeyPath.toString());
+                    Profile updated = profile.withSshKey(newKeyPath.toString());
+                    updatedProfiles.add(updated);
                     updatedCount++;
-                    logOperation("UPDATED-PROFILE", "Connection profile: " + profile.getAlias());
+                    logOperation("UPDATED-PROFILE", "Connection profile: " + profile.alias());
+                } else {
+                    updatedProfiles.add(profile);
                 }
             }
 
-            storage.saveProfiles(allProfiles);
+            storage.saveProfiles(updatedProfiles);
             return updatedCount;
 
         } catch (Exception e) {

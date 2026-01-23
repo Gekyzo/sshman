@@ -2,6 +2,8 @@ package com.sshman.commands;
 
 import com.sshman.Profile;
 import com.sshman.ProfileStorage;
+import com.sshman.ProfileStorageAware;
+import com.sshman.ProfileStorageProvider;
 import com.sshman.constants.SshManConstants;
 import com.sshman.utils.printer.Printer;
 import picocli.CommandLine.Command;
@@ -21,18 +23,24 @@ import static com.sshman.utils.printer.Text.*;
 
 @Command(
     name = "connect-new",
+    aliases = {"cn"},
     description = "Create a new SSH connection profile",
     mixinStandardHelpOptions = true
 )
-public class ConnectNewCommand implements Callable<Integer> {
+public class ConnectNewCommand implements Callable<Integer>, ProfileStorageAware {
 
     @Mixin
     private Printer printer;
 
-    private final ProfileStorage storage = new ProfileStorage();
+    private ProfileStorageProvider storageProvider = ProfileStorageProvider.DEFAULT;
 
     private static final String HEADER_LINE = "═".repeat(65);
     private static final String SEPARATOR_LINE = "─".repeat(65);
+
+    @Override
+    public void setProfileStorageProvider(ProfileStorageProvider provider) {
+        this.storageProvider = provider;
+    }
 
     @Override
     public Integer call() {
@@ -73,7 +81,7 @@ public class ConnectNewCommand implements Callable<Integer> {
 
             Profile profile = new Profile(alias, hostname, username, port, sshKey);
 
-            storage.addProfile(profile);
+            storageProvider.get().addProfile(profile);
 
             // Print success message
             printer.emptyLine();
@@ -177,7 +185,7 @@ public class ConnectNewCommand implements Callable<Integer> {
 
     private int testConnectionAndSuggestFix(BufferedReader reader, Profile profile) throws IOException {
         printer.emptyLine();
-        printer.println(gray("Testing connection to "), cyan("%s@%s", profile.getUsername(), profile.getHostname()), gray("..."));
+        printer.println(gray("Testing connection to "), cyan("%s@%s", profile.username(), profile.hostname()), gray("..."));
 
         String sshCommand = profile.toSshCommand() + " -o ConnectTimeout=10 -o BatchMode=yes exit";
 
@@ -207,7 +215,7 @@ public class ConnectNewCommand implements Callable<Integer> {
     }
 
     private int suggestSshCopyId(BufferedReader reader, Profile profile) throws IOException {
-        String sshKey = profile.getSshKey();
+        String sshKey = profile.sshKey();
 
         if (sshKey == null || sshKey.isEmpty()) {
             printer.emptyLine();
@@ -234,7 +242,7 @@ public class ConnectNewCommand implements Callable<Integer> {
         if (copyKey == null || !copyKey.trim().equalsIgnoreCase("y")) {
             printer.emptyLine();
             printer.println(gray("You can manually run:"));
-            printer.println("  ", cyan("ssh-copy-id -i %s %s@%s", pubKeyPath, profile.getUsername(), profile.getHostname()));
+            printer.println("  ", cyan("ssh-copy-id -i %s %s@%s", pubKeyPath, profile.username(), profile.hostname()));
             return 1;
         }
 
@@ -246,15 +254,15 @@ public class ConnectNewCommand implements Callable<Integer> {
         printer.println(gray("Running ssh-copy-id..."));
         printer.emptyLine();
 
-        String target = profile.getUsername() + "@" + profile.getHostname();
+        String target = profile.username() + "@" + profile.hostname();
 
         List<String> command = new ArrayList<>();
         command.add("ssh-copy-id");
         command.add("-i");
         command.add(pubKeyPath);
-        if (profile.getPort() != null && profile.getPort() != 22) {
+        if (profile.port() != null && profile.port() != 22) {
             command.add("-p");
-            command.add(String.valueOf(profile.getPort()));
+            command.add(String.valueOf(profile.port()));
         }
         command.add(target);
 
@@ -267,7 +275,7 @@ public class ConnectNewCommand implements Callable<Integer> {
             printer.emptyLine();
             if (exitCode == 0) {
                 printer.println(green("✓ "), textOf("Public key copied successfully!"));
-                printer.println(gray("You can now connect with: "), cyan("sshman connect %s", profile.getAlias()));
+                printer.println(gray("You can now connect with: "), cyan("sshman connect %s", profile.alias()));
                 return 0;
             } else {
                 printer.println(red("✗ "), textOf("Failed to copy public key (exit code: " + exitCode + ")"));

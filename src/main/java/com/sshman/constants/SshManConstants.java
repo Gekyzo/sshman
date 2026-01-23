@@ -299,4 +299,33 @@ public final class SshManConstants {
         /** Default key name prefix */
         public static final String ID_PREFIX = "id_";
     }
+
+    // ========================================================================
+    // Column Widths for Table Formatting
+    // ========================================================================
+
+    /**
+     * Column widths used in tabular output formatting.
+     */
+    public static final class ColumnWidths {
+        private ColumnWidths() {}
+
+        /** Width for alias column */
+        public static final int ALIAS = 15;
+
+        /** Width for hostname column */
+        public static final int HOSTNAME = 20;
+
+        /** Width for username column */
+        public static final int USERNAME = 15;
+
+        /** Width for port column */
+        public static final int PORT = 6;
+
+        /** Truncation limit for SSH key paths */
+        public static final int SSH_KEY_TRUNCATE = 35;
+
+        /** Width for table separator lines */
+        public static final int TABLE_LINE = 85;
+    }
 }
